@@ -1,39 +1,34 @@
 import pygame
 
-#inicializar 
 pygame.init()
 
-screen_size = (800,800) #tamanho da tela
-screen = pygame.display.set_mode(screen_size) #atribui a criação da tela a variável screen
-pygame.display.set_caption("Break Out") #titulo do jogo
+screen_size = (800,800)
+screen = pygame.display.set_mode(screen_size)
+pygame.display.set_caption("Break Out")
 
-ball_size = 15 #tamanho da bola
-ball = pygame.Rect(400,500,ball_size,ball_size) #cria um retangulo que representa a bola
+ball_size = 15
+ball = pygame.Rect(400,500,ball_size,ball_size)
 
-player_size = 100 # tamanho da raquete controlada
+player_size = 100
 player = pygame.Rect(400,750,player_size,15)
 
-blocks_lines = 14 # blocos por linha
-lines_blocks = 8 # linhas por blocos
+blocks_lines = 14
+lines_blocks = 8
 total_blocks = blocks_lines * lines_blocks
 
 def create_blocks(blocks_line,lines_blocks):
-    height_size = screen_size[1] #altura da tela
-    width_size = screen_size[0] #largura da tela
+    height_size = screen_size[1]
+    width_size = screen_size[0]
     block_distance = 8
     width_block = width_size / 14 - block_distance
-    height_block = 15 #altura do bloco
+    height_block = 15
     line_distance = height_block + 10
 
     blocks = []
 
-    #criar os blocos
     for j in range(lines_blocks):
         for i in range(blocks_line):
-            #criar o bloco
             block = pygame.Rect(i * (width_block+ block_distance), j * line_distance, width_block,height_block)
-
-            #adicionar o bloco na lista de blocos
             blocks.append(block)
 
     return blocks
@@ -48,11 +43,10 @@ color = {
     "red": (255,0,0),
 }
 
-end_game = False #se torna true quando o jogo acaba
+end_game = False
 score = 0 
-ball_move = [1, 1] #quantos px a bola se movimenta a cada seg
+ball_move = [1, 1]
 
-#desenhar na tela
 def drawn_startgame():
     screen.fill(color["black"])
     pygame.draw.rect(screen, color["blue"], player)
@@ -62,24 +56,25 @@ def drawn_blocks(blocks):
     for block in blocks:
         pygame.draw.rect(screen, color["green"], block)
 
-# Criar as funções do jogo
-def moviment_player(event):
-    if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_RIGHT:
-            if (player.x + player_size) < screen_size[0]:
-                player.x =  player.x + 10
-        if event.key == pygame.K_LEFT:
-            if player.x > 0:
-                player.x = player.x - 10  
+def update_player_movement():
+    keys = pygame.key.get_pressed()
+    
+    if keys[pygame.K_RIGHT]:
+        if (player.x + player_size) < screen_size[0]:
+            player.x = player.x + 5
+            
+    if keys[pygame.K_LEFT]:
+        if player.x > 0:
+            player.x = player.x - 5
     
 def moviment_ball(ball):
     moviment = ball_move
     ball.x = ball.x + moviment[0]
     ball.y = ball.y + moviment[1]
-   
+    
     if ball.x <= 0:
         moviment[0] = -moviment[0]
-    if ball.y <- 0:
+    if ball.y < 0:
         moviment[1] = -moviment[1]
     if ball.x + ball_size >= screen_size[0]:
         moviment[0] = -moviment[0] 
@@ -90,35 +85,31 @@ def moviment_ball(ball):
 blocks = create_blocks(blocks_lines,lines_blocks)
 
 def ball_collision_player(ball, player):
-    # a função colliderect verifica se dois retângulos se sobrepõem
     if ball.colliderect(player):
         if ball_move[1] > 0:
             ball.bottom = player.top
             ball_move[1] = -ball_move[1]
-            offset = ball.centerx - player.centerx  # Mapeia o offset para a nova velocidade horizontal.
-            new_speed_x = offset / 10  # Calcula a nova velocidade horizontal
-            max_speed_x = 4  # Defina a velocidade máxima que a bola pode atingir. Experimente valores como 3, 4 ou 5.
+            offset = ball.centerx - player.centerx
+            new_speed_x = offset / 10
+            max_speed_x = 4
             if new_speed_x > max_speed_x:
                 new_speed_x = max_speed_x
-            elif new_speed_x < -max_speed_x: # Usamos 'elif' e verificamos o limite negativo
+            elif new_speed_x < -max_speed_x:
                 new_speed_x = -max_speed_x
-            ball_move[0] = offset / 8
+            ball_move[0] = new_speed_x
 
-#criar um loop infinito
 while not end_game:
     drawn_startgame()
     drawn_blocks(blocks)
-    for event in pygame.event.get(): #todos os eventos que ocorrem durante o game
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:  
+            end_game = True
 
-       if event.type == pygame.QUIT:  
-         end_game = True
-       moviment_player(event)
+    update_player_movement()
 
     ball_collision_player(ball, player)
     ball_move = moviment_ball(ball)
-    pygame.time.wait(1)
-    pygame.display.flip() #atualiza a tela do jogo
+    pygame.time.wait(5)
+    pygame.display.flip()
 
 pygame.quit()
-
-
