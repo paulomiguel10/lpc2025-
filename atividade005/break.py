@@ -89,6 +89,21 @@ def moviment_ball(ball):
     return moviment
 blocks = create_blocks(blocks_lines,lines_blocks)
 
+def ball_collision_player(ball, player):
+    # a função colliderect verifica se dois retângulos se sobrepõem
+    if ball.colliderect(player):
+        if ball_move[1] > 0:
+            ball.bottom = player.top
+            ball_move[1] = -ball_move[1]
+            offset = ball.centerx - player.centerx  # Mapeia o offset para a nova velocidade horizontal.
+            new_speed_x = offset / 10  # Calcula a nova velocidade horizontal
+            max_speed_x = 4  # Defina a velocidade máxima que a bola pode atingir. Experimente valores como 3, 4 ou 5.
+            if new_speed_x > max_speed_x:
+                new_speed_x = max_speed_x
+            elif new_speed_x < -max_speed_x: # Usamos 'elif' e verificamos o limite negativo
+                new_speed_x = -max_speed_x
+            ball_move[0] = offset / 8
+
 #criar um loop infinito
 while not end_game:
     drawn_startgame()
@@ -99,6 +114,7 @@ while not end_game:
          end_game = True
        moviment_player(event)
 
+    ball_collision_player(ball, player)
     ball_move = moviment_ball(ball)
     pygame.time.wait(1)
     pygame.display.flip() #atualiza a tela do jogo
