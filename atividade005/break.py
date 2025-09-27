@@ -58,9 +58,17 @@ def drawn_startgame():
     pygame.draw.rect(screen, color["white"], ball)
 
 
+# cores por linha
+cores_linhas = [color["red"], color["red"], color["orange"], color["orange"],
+                color["green"], color["green"], color["yellow"], color["yellow"]]
+
+blocks = create_blocks (blocks_lines, lines_blocks) #cria os nvos blocos superiores e adiciona as cores sobrepondo uma as outras
+
 def drawn_blocks(blocks):
-    for block in blocks:
-        pygame.draw.rect(screen, color["green"], block)
+    for idx, block in enumerate(blocks):
+        linha = idx // blocks_lines
+        pygame.draw.rect(screen, cores_linhas[linha], block) #função para enumerar os blocos sobrepondo-os
+        
 
 
 def update_player_movement():
@@ -120,6 +128,19 @@ while not end_game:
     update_player_movement()
 
     ball_collision_player(ball, player)
+    # Colisão com blocos
+    for block in blocks[:]:
+        if ball.colliderect(block):
+            ball_move[1] = -ball_move[1]
+            blocks.remove(block)
+            score += 1
+            break
+
+    # Desenhar score proporcional
+    font = pygame.font.SysFont(None, int(screen_size[1]*0.04))
+    score_text = font.render(f"Score: {score}", True, color["white"])
+    screen.blit(score_text, (10, 10))
+
     ball_move = moviment_ball(ball)
     pygame.time.wait(5)
     pygame.display.flip()
