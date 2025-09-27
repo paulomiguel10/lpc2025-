@@ -52,15 +52,11 @@ end_game = False #se torna true quando o jogo acaba
 score = 0 
 ball_move = [1, 1] #quantos px a bola se movimenta a cada seg
 
-#criar funções do jogo
-
-
 #desenhar na tela
 def drawn_startgame():
     screen.fill(color["black"])
     pygame.draw.rect(screen, color["blue"], player)
     pygame.draw.rect(screen, color["white"], ball)
-
 
 def drawn_blocks(blocks):
     for block in blocks:
@@ -75,15 +71,23 @@ def moviment_player(event):
         if event.key == pygame.K_LEFT:
             if player.x > 0:
                 player.x = player.x - 10  
-    pass
-
-def moviment_ball():
-    pass
-
-
-
+    
+def moviment_ball(ball):
+    moviment = ball_move
+    ball.x = ball.x + moviment[0]
+    ball.y = ball.y + moviment[1]
+   
+    if ball.x <= 0:
+        moviment[0] = -moviment[0]
+    if ball.y <- 0:
+        moviment[1] = -moviment[1]
+    if ball.x + ball_size >= screen_size[0]:
+        moviment[0] = -moviment[0] 
+    if ball.y + ball_size >= screen_size[1]:
+        moviment[1] = -moviment[1]
+    
+    return moviment
 blocks = create_blocks(blocks_lines,lines_blocks)
-
 
 #criar um loop infinito
 while not end_game:
@@ -95,7 +99,7 @@ while not end_game:
          end_game = True
        moviment_player(event)
 
-
+    ball_move = moviment_ball(ball)
     pygame.time.wait(1)
     pygame.display.flip() #atualiza a tela do jogo
 
