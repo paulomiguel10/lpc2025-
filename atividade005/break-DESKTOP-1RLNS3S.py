@@ -1,7 +1,5 @@
 # breakout
-
-#teste de primeiro comentário do código break- DESKTOP-1RLNS3S.py
-
+# teste de comentário do arquivo break- DESKTOP- Ranielly
 import pygame
 
 pygame.init()
