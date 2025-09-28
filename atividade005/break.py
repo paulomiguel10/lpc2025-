@@ -49,6 +49,14 @@ color = {
     "red": (255, 0, 0),
 }
 
+# Mapeia cada cor para um valor de pontos
+pontos_por_cor = {
+    color["yellow"]: 1,  # Amarelo vale menos
+    color["green"]: 3,
+    color["orange"]: 5,
+    color["red"]: 7      # Vermelho vale mais
+}
+
 end_game = False
 score = 0
 ball_move = [1, 1]
@@ -130,13 +138,21 @@ while not end_game:
     update_player_movement()
 
     ball_collision_player(ball, player)
-    # Colisão com blocos
-    for block in blocks[:]:
+   # Colisão com blocos
+    for idx, block in enumerate(blocks[:]):
         if ball.colliderect(block):
+            # 1. Descobrir a cor do bloco que foi atingido
+            linha_do_bloco = idx // blocks_lines
+            cor_do_bloco = cores_linhas[linha_do_bloco]
+
+            # 2. Obter os pontos para essa cor
+            pontos_ganhos = pontos_por_cor.get(cor_do_bloco, 1) # Pega os pontos, ou 1 como padrão
+
+            # 3. Atualizar a lógica do jogo
             ball_move[1] = -ball_move[1]
             blocks.remove(block)
-            score += 1
-            break
+            score += pontos_ganhos
+            break  # Evita múltiplas colisões na mesma atualização
 
     # Desenhar score proporcional
     font = pygame.font.SysFont(None, int(screen_size[1]*0.04))
