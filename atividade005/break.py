@@ -59,8 +59,15 @@ pontos_por_cor = {
 
 end_game = False
 score = 0
-ball_move = [1, 1]
+velocidade_nivel_1 = 2.5 # Velocidade inicial
+velocidade_nivel_2 = 4.0 # Velocidade ao atingir o primeiro verde
+velocidade_nivel_3 = 12.0 # Velocidade ao atingir o primeiro vermelho
 
+# Flags para controlar se a velocidade já foi alterada
+atingiu_verde = False
+atingiu_vermelho = False
+# A direção inicial será diagonal. Normalizamos o vetor [1, 1] e multiplicamos pela velocidade.
+ball_move = [velocidade_nivel_1 / (2**0.5), velocidade_nivel_1 / (2**0.5)]
 
 def drawn_startgame():
     screen.fill(color["black"])
@@ -114,19 +121,35 @@ blocks = create_blocks(blocks_lines, lines_blocks)
 
 
 def ball_collision_player(ball, player):
+    global atingiu_verde, atingiu_vermelho
     if ball.colliderect(player):
         if ball_move[1] > 0:
             ball.bottom = player.top
             ball_move[1] = -ball_move[1]
             offset = ball.centerx - player.centerx
             new_speed_x = offset / 10
-            max_speed_x = 4
+            max_speed_x = 6
             if new_speed_x > max_speed_x:
                 new_speed_x = max_speed_x
             elif new_speed_x < -max_speed_x:
                 new_speed_x = -max_speed_x
             ball_move[0] = new_speed_x
+            # Começamos com a velocidade base.
+            velocidade_alvo_atual = velocidade_nivel_1
 
+            # Se o nível 2 foi ativado, usamos a velocidade 2.
+            if atingiu_verde:
+                velocidade_alvo_atual = velocidade_nivel_2
+            
+            # Se o nível 3 foi ativado, ele SOBRESCREVE a velocidade 2.
+            # Usamos um 'if' separado em vez de 'elif' para garantir essa prioridade.
+            if atingiu_vermelho:
+                velocidade_alvo_atual = velocidade_nivel_3
+            velocidade_atual = (ball_move[0]**2 + ball_move[1]**2)**0.5
+            if velocidade_atual > 0:
+                fator = velocidade_alvo_atual / velocidade_atual
+                ball_move[0] *= fator
+                ball_move[1] *= fator
 
 while not end_game:
     drawn_startgame()
@@ -144,6 +167,32 @@ while not end_game:
             # 1. Descobrir a cor do bloco que foi atingido
             linha_do_bloco = idx // blocks_lines
             cor_do_bloco = cores_linhas[linha_do_bloco]
+
+            velocidade_alvo = 0 # Variável para guardar a nova velocidade desejada
+
+            # Se atingir um bloco VERMELHO e for a PRIMEIRA VEZ
+            if cor_do_bloco == color["red"] and not atingiu_vermelho:
+                atingiu_vermelho = True # Marca que já passamos para o nível 3
+                atingiu_verde = True    # Nível 3 também conta como tendo passado pelo nível 2
+                velocidade_alvo = velocidade_nivel_3
+                print("NÍVEL 3 de velocidade ativado!") # Mensagem de feedback (opcional)
+
+            # Se atingir um bloco VERDE e for a PRIMEIRA VEZ (e não tivermos ativado o nível 3 ainda)
+            elif cor_do_bloco == color["green"] and not atingiu_verde:
+                atingiu_verde = True # Marca que já passamos para o nível 2
+                velocidade_alvo = velocidade_nivel_2
+                print("NÍVEL 2 de velocidade ativado!") # Mensagem de feedback (opcional)
+
+            # Se a velocidade_alvo foi definida, precisamos ajustar o vetor ball_move
+            if velocidade_alvo > 0:
+                # Calcula a velocidade atual para encontrar o fator de escala
+                velocidade_atual = (ball_move[0]**2 + ball_move[1]**2)**0.5
+                
+                # Evita divisão por zero se a bola estiver parada
+                if velocidade_atual > 0:
+                    fator = velocidade_alvo / velocidade_atual
+                    ball_move[0] *= fator
+                    ball_move[1] *= fator
 
             # 2. Obter os pontos para essa cor
             pontos_ganhos = pontos_por_cor.get(cor_do_bloco, 1) # Pega os pontos, ou 1 como padrão
