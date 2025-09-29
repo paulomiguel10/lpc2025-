@@ -17,26 +17,28 @@ ball = pygame.Rect(400, 500, ball_size, ball_size)
 player_size = 100
 player = pygame.Rect(400, 750, player_size, 15)
 
-blocks_lines = 14
-lines_blocks = 8
-total_blocks = blocks_lines * lines_blocks
 
+blocks_lines = 14 
+lines_blocks = 8
 
 def create_blocks(blocks_line, lines_blocks):
-    width_size = screen_size[0]
-    block_distance = 8
-    width_block = width_size / 14 - block_distance
-    height_block = 15
-    line_distance = height_block + 10
+    width_size, height_size = screen_size
+    block_distance = int(screen_size[0]*0.008)  # diminuir o espaço entre blocos
+    width_block = width_size / blocks_line - block_distance
+    height_block = int(screen_size[1]*0.015)    # altura mais fina
+    line_distance = height_block + int(screen_size[1]*0.01)
 
     blocks = []
-
+    offset_top = int(screen_size[1]*0.1)
     for j in range(lines_blocks):
         for i in range(blocks_line):
-            block = pygame.Rect(i * (width_block + block_distance),
-                                j * line_distance, width_block, height_block)
+            block = pygame.Rect(
+                i * (width_block + block_distance),
+                offset_top + j * line_distance,
+                width_block,
+                height_block
+            )
             blocks.append(block)
-
     return blocks
 
 color = {
@@ -97,9 +99,9 @@ def update_player_movement():
         if player.x > 0:
             player.x = player.x - 5
 
-som_blocos = pygame.mixer.Sound("C:/Users/Paulo/lpc2025-/atividade005/assets/breaksound.wav")
-som_colisao = pygame.mixer.Sound("C:/Users/Paulo/lpc2025-/atividade005/assets/bounce.wav")
-som_perda = pygame.mixer.Sound("C:/Users/Paulo/lpc2025-/atividade005/assets/wrong-buzzer-6268.mp3")
+som_blocos = pygame.mixer.Sound("./assets/breaksound.wav")
+som_colisao = pygame.mixer.Sound("./assets/bounce.wav")
+som_perda = pygame.mixer.Sound("./assets/wrong-buzzer-6268.mp3")
 
 def moviment_ball(ball, vidas):
     global ball_move
