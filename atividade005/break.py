@@ -1,6 +1,6 @@
 # breakout
 
-#teste de primeiro comentário do código break- DESKTOP-1RLNS3S.py
+# First code test comment break- DESKTOP-1RLNS3S.py
 import math
 import pygame
 
@@ -9,7 +9,7 @@ pygame.mixer.init()
 
 screen_size = (800, 800)
 screen = pygame.display.set_mode(screen_size)
-pygame.display.set_caption("Break Out")
+pygame.display.set_caption("Breakout")
 
 ball_size = 15
 ball = pygame.Rect(400, 500, ball_size, ball_size)
@@ -17,15 +17,14 @@ ball = pygame.Rect(400, 500, ball_size, ball_size)
 player_size = 100
 player = pygame.Rect(400, 750, player_size, 15)
 
-
 blocks_lines = 14 
 lines_blocks = 8
 
 def create_blocks(blocks_line, lines_blocks):
     width_size, height_size = screen_size
-    block_distance = int(screen_size[0]*0.008)  # diminuir o espaço entre blocos
+    block_distance = int(screen_size[0]*0.008)  # decrease block spacing
     width_block = width_size / blocks_line - block_distance
-    height_block = int(screen_size[1]*0.015)    # altura mais fina
+    height_block = int(screen_size[1]*0.015)    # thinner height
     line_distance = height_block + int(screen_size[1]*0.01)
 
     blocks = []
@@ -51,42 +50,42 @@ color = {
     "red": (255, 0, 0),
 }
 
-# Mapeia cada cor para um valor de pontos
-pontos_por_cor = {
-    color["yellow"]: 1,  # Amarelo vale menos
+# Map each color to a score value
+points_per_color = {
+    color["yellow"]: 1,  # Yellow worth less
     color["green"]: 3,
     color["orange"]: 5,
-    color["red"]: 7      # Vermelho vale mais
+    color["red"]: 7      # Red worth more
 }
 
 end_game = False
-vidas = 3 
+lives = 3 
 score = 0
-velocidade_nivel_1 = 2.5 # Velocidade inicial
-velocidade_nivel_2 = 4.0 # Velocidade ao atingir o primeiro verde
-velocidade_nivel_3 = 12.0 # Velocidade ao atingir o primeiro vermelho
+speed_level_1 = 2.5 # Initial speed
+speed_level_2 = 4.0 # Speed when hitting first green
+speed_level_3 = 12.0 # Speed when hitting first red
 
-# Flags para controlar se a velocidade já foi alterada
-atingiu_verde = False
-atingiu_vermelho = False
-# A direção inicial será diagonal. Normalizamos o vetor [1, 1] e multiplicamos pela velocidade.
-ball_move = [velocidade_nivel_1 / (2**0.5), velocidade_nivel_1 / (2**0.5)]
+# Flags to control if speed has already changed
+hit_green = False
+hit_red = False
+# The initial direction will be diagonal. Normalize vector [1, 1] and multiply by speed.
+ball_move = [speed_level_1 / (2**0.5), speed_level_1 / (2**0.5)]
 
-def drawn_startgame():
+def draw_startgame():
     screen.fill(color["black"])
     pygame.draw.rect(screen, color["blue"], player)
     pygame.draw.rect(screen, color["white"], ball)
 
-# cores por linha
-cores_linhas = [color["red"], color["red"], color["orange"], color["orange"],
+# Colors by line
+line_colors = [color["red"], color["red"], color["orange"], color["orange"],
                 color["green"], color["green"], color["yellow"], color["yellow"]]
 
-blocks = create_blocks (blocks_lines, lines_blocks) #cria os nvos blocos superiores e adiciona as cores sobrepondo uma as outras
+blocks = create_blocks(blocks_lines, lines_blocks) # creates new top blocks and overlays the colors
 
-def drawn_blocks(blocks):
+def draw_blocks(blocks):
     for idx, block in enumerate(blocks):
-        linha = idx // blocks_lines
-        pygame.draw.rect(screen, cores_linhas[linha], block) #função para enumerar os blocos sobrepondo-os
+        line = idx // blocks_lines
+        pygame.draw.rect(screen, line_colors[line], block) # function to enumerate and overlay blocks
         
 def update_player_movement():
     keys = pygame.key.get_pressed()
@@ -99,47 +98,47 @@ def update_player_movement():
         if player.x > 0:
             player.x = player.x - 5
 
-som_blocos = pygame.mixer.Sound("./assets/breaksound.wav")
-som_colisao = pygame.mixer.Sound("./assets/bounce.wav")
-som_perda = pygame.mixer.Sound("./assets/wrong-buzzer-6268.mp3")
+sound_blocks = pygame.mixer.Sound("./assets/breaksound.wav")
+sound_collision = pygame.mixer.Sound("./assets/bounce.wav")
+sound_loss = pygame.mixer.Sound("./assets/wrong-buzzer-6268.mp3")
 
-def moviment_ball(ball, vidas):
+def move_ball(ball, lives):
     global ball_move
-    moviment = ball_move
-    ball.x = ball.x + moviment[0]
-    ball.y = ball.y + moviment[1]
+    movement = ball_move
+    ball.x = ball.x + movement[0]
+    ball.y = ball.y + movement[1]
 
     if ball.x <= 0:
-        moviment[0] = -moviment[0]
-        som_colisao.play()
+        movement[0] = -movement[0]
+        sound_collision.play()
     if ball.y < 0:
-        moviment[1] = -moviment[1]
-        som_colisao.play()
+        movement[1] = -movement[1]
+        sound_collision.play()
     if ball.x + ball_size >= screen_size[0]:
-        moviment[0] = -moviment[0]
-        som_colisao.play()
+        movement[0] = -movement[0]
+        sound_collision.play()
 
-    # Sistema de contagem de vidas        
+    # Lives system       
     if ball.y + ball_size >= screen_size[1]:
-         som_perda.play()
-         vidas -= 1
-         if vidas > 0:
+         sound_loss.play()
+         lives -= 1
+         if lives > 0:
              ball.x = screen_size[0] // 2
              ball.y = screen_size[1] // 2
-             moviment[0] = velocidade_nivel_1/math.sqrt(2)
-             moviment[1] = -velocidade_nivel_1/math.sqrt(2)
-             return moviment, vidas
+             movement[0] = speed_level_1/math.sqrt(2)
+             movement[1] = -speed_level_1/math.sqrt(2)
+             return movement, lives
          else:
-             return None, vidas #acabou as vidas
+             return None, lives # no lives left
 
-    return moviment, vidas
+    return movement, lives
     
 blocks = create_blocks(blocks_lines, lines_blocks)
 
 def ball_collision_player(ball, player):
-    global atingiu_verde, atingiu_vermelho
+    global hit_green, hit_red
     if ball.colliderect(player):
-        som_colisao.play()
+        sound_collision.play()
         if ball_move[1] > 0:
             ball.bottom = player.top
             ball_move[1] = -ball_move[1]
@@ -151,27 +150,27 @@ def ball_collision_player(ball, player):
             elif new_speed_x < -max_speed_x:
                 new_speed_x = -max_speed_x
             ball_move[0] = new_speed_x
-            # Começamos com a velocidade base.
-            velocidade_alvo_atual = velocidade_nivel_1
+            # Start with base speed.
+            target_speed = speed_level_1
 
-            # Se o nível 2 foi ativado, usamos a velocidade 2.
-            if atingiu_verde:
-                velocidade_alvo_atual = velocidade_nivel_2
+            # If level 2 was activated, use speed 2.
+            if hit_green:
+                target_speed = speed_level_2
             
-            # Se o nível 3 foi ativado, ele SOBRESCREVE a velocidade 2.
-            # Usamos um 'if' separado em vez de 'elif' para garantir essa prioridade.
-            if atingiu_vermelho:
-                velocidade_alvo_atual = velocidade_nivel_3
-            velocidade_atual = (ball_move[0]**2 + ball_move[1]**2)**0.5
-            if velocidade_atual > 0:
-                fator = velocidade_alvo_atual / velocidade_atual
-                ball_move[0] *= fator
-                ball_move[1] *= fator
+            # If level 3 was activated, it OVERWRITES speed 2.
+            # Use separate if instead of elif to ensure priority.
+            if hit_red:
+                target_speed = speed_level_3
+            current_speed = (ball_move[0]**2 + ball_move[1]**2)**0.5
+            if current_speed > 0:
+                factor = target_speed / current_speed
+                ball_move[0] *= factor
+                ball_move[1] *= factor
 
 while not end_game:
-    resultado = moviment_ball(ball,vidas)
-    drawn_startgame()
-    drawn_blocks(blocks)
+    result = move_ball(ball,lives)
+    draw_startgame()
+    draw_blocks(blocks)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -179,65 +178,64 @@ while not end_game:
 
     update_player_movement()
 
-    if resultado is None:  #se acabar as vidas o jogo acaba
+    if result is None:  # if lives are over, game ends
          pygame.display.flip()
          break
     else:
-         ball_move, vidas = resultado
-
+         ball_move, lives = result
 
     ball_collision_player(ball, player)
-   # Colisão com blocos
+   # Collision with blocks
     for idx, block in enumerate(blocks[:]):
         if ball.colliderect(block):
-            som_blocos.play()
-            # 1. Descobrir a cor do bloco que foi atingido
-            linha_do_bloco = idx // blocks_lines
-            cor_do_bloco = cores_linhas[linha_do_bloco]
+            sound_blocks.play()
+            # 1. Get the color of the block that was hit
+            block_line = idx // blocks_lines
+            block_color = line_colors[block_line]
 
-            velocidade_alvo = 0 # Variável para guardar a nova velocidade desejada
+            target_speed = 0 # Variable to store new desired speed
 
-            # Se atingir um bloco VERMELHO e for a PRIMEIRA VEZ
-            if cor_do_bloco == color["red"] and not atingiu_vermelho:
-                atingiu_vermelho = True # Marca que já passamos para o nível 3
-                atingiu_verde = True    # Nível 3 também conta como tendo passado pelo nível 2
-                velocidade_alvo = velocidade_nivel_3
-                print("NÍVEL 3 de velocidade ativado!") # Mensagem de feedback (opcional)
+            # If hitting a RED block for the FIRST TIME
+            if block_color == color["red"] and not hit_red:
+                hit_red = True # Mark that we reached level 3
+                hit_green = True    # Level 3 also counts as having reached level 2
+                target_speed = speed_level_3
+                print("SPEED LEVEL 3 activated!") # Feedback message (optional)
 
-            # Se atingir um bloco VERDE e for a PRIMEIRA VEZ (e não tivermos ativado o nível 3 ainda)
-            elif cor_do_bloco == color["green"] and not atingiu_verde:
-                atingiu_verde = True # Marca que já passamos para o nível 2
-                velocidade_alvo = velocidade_nivel_2
-                print("NÍVEL 2 de velocidade ativado!") # Mensagem de feedback (opcional)
+            # If hitting a GREEN block for the FIRST TIME (and not level 3 yet)
+            elif block_color == color["green"] and not hit_green:
+                hit_green = True # Mark that we reached level 2
+                target_speed = speed_level_2
+                print("SPEED LEVEL 2 activated!") # Feedback message (optional)
 
-            # Se a velocidade_alvo foi definida, precisamos ajustar o vetor ball_move
-            if velocidade_alvo > 0:
-                # Calcula a velocidade atual para encontrar o fator de escala
-                velocidade_atual = (ball_move[0]**2 + ball_move[1]**2)**0.5
+            # If target_speed was set, adjust ball_move
+            if target_speed > 0:
+                # Calculate current speed to find scale factor
+                current_speed = (ball_move[0]**2 + ball_move[1]**2)**0.5
                 
-                # Evita divisão por zero se a bola estiver parada
-                if velocidade_atual > 0:
-                    fator = velocidade_alvo / velocidade_atual
-                    ball_move[0] *= fator
-                    ball_move[1] *= fator
+                # Avoid division by zero if ball stopped
+                if current_speed > 0:
+                    factor = target_speed / current_speed
+                    ball_move[0] *= factor
+                    ball_move[1] *= factor
 
-            # 2. Obter os pontos para essa cor
-            pontos_ganhos = pontos_por_cor.get(cor_do_bloco, 1) # Pega os pontos, ou 1 como padrão
+            # 2. Get points for that color
+            points_gained = points_per_color.get(block_color, 1) # default 1
 
-            # 3. Atualizar a lógica do jogo
+            # 3. Update game logic
             ball_move[1] = -ball_move[1]
             blocks.remove(block)
-            score += pontos_ganhos
-            break  # Evita múltiplas colisões na mesma atualização
+            score += points_gained
+            break  # Avoid multiple collisions in same update
 
-    # Desenhar score proporcional
+    # Draw proportional score
     font = pygame.font.SysFont(None, int(screen_size[1]*0.04))
     score_text = font.render(f"Score: {score}", True, color["white"])
     screen.blit(score_text, (10, 10))
 
-    #Desenhar sistema de vidas
-    vidas_texto = font.render(f"Vidas: {vidas}",True ,color["white"] )
-    screen.blit(vidas_texto,(10,40))
+    # Draw lives system
+    lives_text = font.render(f"Lives: {lives}",True ,color["white"] )
+    screen.blit(lives_text,(10,40))
     
 
     pygame.time.wait(5)
