@@ -83,7 +83,7 @@ def drawn_startgame():
     pygame.draw.rect(screen, color["white"], ball)
 
 # cores por linha
-cores_linhas = [color ["black"], color ["black"], color["red"], color["red"], color["orange"], color["orange"],
+cores_linhas = [color ["black"], color["red"], color["red"], color["orange"], color["orange"],
                 color["green"], color["green"], color["yellow"], color["yellow"]]
 
 blocks = create_blocks(blocks_lines, lines_blocks) #cria os nvos blocos superiores e adiciona as cores sobrepondo uma as outras
