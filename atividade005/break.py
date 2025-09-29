@@ -3,6 +3,7 @@
 #teste de primeiro comentário do código break- DESKTOP-1RLNS3S.py
 import math
 import pygame
+from pathlib import Path
 
 pygame.init()
 pygame.mixer.init()
@@ -19,7 +20,7 @@ player = pygame.Rect(400, 750, player_size, 15)
 
 
 blocks_lines = 14  # antes 14
-lines_blocks = 8
+lines_blocks = 9
 
 def create_blocks(blocks_line, lines_blocks):
     width_size, height_size = screen_size
@@ -53,6 +54,7 @@ color = {
 
 # Mapeia cada cor para um valor de pontos
 pontos_por_cor = {
+    color["white"]:0,
     color["yellow"]: 1,  # Amarelo vale menos
     color["green"]: 3,
     color["orange"]: 5,
@@ -81,7 +83,7 @@ def drawn_startgame():
     pygame.draw.rect(screen, color["white"], ball)
 
 # cores por linha
-cores_linhas = [color["red"], color["red"], color["orange"], color["orange"],
+cores_linhas = [color ["black"], color ["black"], color["red"], color["red"], color["orange"], color["orange"],
                 color["green"], color["green"], color["yellow"], color["yellow"]]
 
 blocks = create_blocks(blocks_lines, lines_blocks) #cria os nvos blocos superiores e adiciona as cores sobrepondo uma as outras
@@ -91,6 +93,16 @@ cores_blocos = []
 for linha in range(lines_blocks):
     for _ in range(blocks_lines):
         cores_blocos.append(cores_linhas[linha])
+
+#barreira para bola não passar direto
+barreira_inquebrav = pygame.Rect(
+    0,  # X inicial
+    int(screen_size[1]*0.1) - int(screen_size[1]*0.02),  # ligeiramente acima do primeiro nível (linha vermelha)
+    screen_size[0],  # largura total da tela
+    int(screen_size[1]*0.02)  # altura da barreira
+)
+# fim da barreira
+
 
 def drawn_blocks(blocks):
     for idx, block in enumerate(blocks):
@@ -107,9 +119,13 @@ def update_player_movement():
         if player.x > 0:
             player.x = player.x - 5
 
-som_blocos = pygame.mixer.Sound("./assets/breaksound.wav")
-som_colisao = pygame.mixer.Sound("./assets/bounce.wav")
-som_perda = pygame.mixer.Sound("./assets/wrong-buzzer-6268.mp3")
+
+BASE = Path(__file__).resolve().parent  # pasta do script
+
+som_blocos = pygame.mixer.Sound(str(BASE / "assets/breaksound.wav"))
+som_colisao = pygame.mixer.Sound(str(BASE / "assets/bounce.wav"))
+som_perda = pygame.mixer.Sound(str(BASE / "assets/wrong-buzzer-6268.mp3"))
+
 
 def moviment_ball(ball, vidas):
     global ball_move
@@ -184,6 +200,12 @@ def ball_collision_player(ball, player):
                 ball_move[0] *= fator
                 ball_move[1] *= fator
 
+            # Colisão com barreira inquebrável
+            if ball.colliderect(barreira_inquebrav):
+                ball_move[1] = -ball_move[1]  # apenas inverte a direção vertical
+                som_colisao.play()
+
+
             # --- INÍCIO DA CORREÇÃO DO BUG ---
             # Garante uma velocidade vertical mínima para evitar que a bola fique presa.
             min_vertical_speed = 1.5  # Define uma velocidade vertical mínima
@@ -235,6 +257,11 @@ while not end_game:
 
             velocidade_alvo = 0 # Variável para guardar a nova velocidade desejada
 
+            if cor_do_bloco == color["black"]:# Apenas rebate a bola, não remove o bloco e não dá pontos
+                ball_move[1] = -ball_move[1]
+                break  # sai do loop para não quebrar múltiplos blocos
+                velocidade_alvo = 0 # Variável para guardar a nova velocidade desejada
+
             # Se atingir um bloco VERMELHO e for a PRIMEIRA VEZ
             if cor_do_bloco == color["red"] and not atingiu_vermelho:
                 atingiu_vermelho = True # Marca que já passamos para o nível 4
@@ -277,13 +304,31 @@ while not end_game:
             score += pontos_ganhos
             break  
     # Desenhar score proporcional
-    font = pygame.font.SysFont(None, int(screen_size[1]*0.04))
-    score_text = font.render(f"Score: {score}", True, color["white"])
-    screen.blit(score_text, (10, 10))
+    # Configuração da fonte para o estilo arcade (topo da tela)
+    font_size = int(screen_size[1] * 0.05)
+    font = pygame.font.SysFont(None, font_size)
+    y_pos_top = 10 # Posição Y no topo
 
-    #Desenhar sistema de vidas
-    vidas_texto = font.render(f"Vidas: {vidas}",True ,color["white"] )
-    screen.blit(vidas_texto,(10,40))
+    # --- 1. PLACAR (SCORE) ---
+    # A chave é o f-string: {score:03d} força 3 dígitos com zero à esquerda.
+    score_formatado = f"{score:03d}" 
+    score_texto = font.render(score_formatado, True, color["white"])
+
+    # Posição: Center-Right (para imitar o local do '000' na imagem)
+    # Exemplo de posição X: metade da tela + 100 pixels
+    x_pos_score = screen_size[0] // 2 + 100 
+    screen.blit(score_texto, (x_pos_score, y_pos_top))
+
+    # --- 2. VIDAS (LIVES) ---
+    # Exibe apenas o número de vidas restantes, como os dígitos '1' e '2' da imagem
+    vidas_texto = font.render(f"{vidas}", True, color["white"])
+    # Posição: Superior Esquerdo (onde o '1' está na imagem)
+    screen.blit(vidas_texto, (30, y_pos_top))
+
+    # --- 3. LABEL (Opcional: para o estilo 'P1' ou 'P2' da imagem) ---
+    player_label = font.render("P1", True, color["white"])
+    # Posição: Center-Left (onde o '2' está na imagem)
+    screen.blit(player_label, (screen_size[0] // 2 - 100, y_pos_top))
     
 
     pygame.time.wait(5)
