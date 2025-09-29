@@ -62,13 +62,16 @@ pontos_por_cor = {
 end_game = False
 vidas = 3 
 score = 0
-velocidade_nivel_1 = 2.5 # Velocidade inicial
-velocidade_nivel_2 = 4.0 # Velocidade ao atingir o primeiro verde
-velocidade_nivel_3 = 12.0 # Velocidade ao atingir o primeiro vermelho
+velocidade_nivel_1 = 2.0  # Velocidade inicial
+velocidade_nivel_2 = 3.5  # Velocidade ao atingir o primeiro verde
+velocidade_nivel_3 = 4.5  # Velocidade ao atingir o primeiro laranja
+velocidade_nivel_4 = 5.5  # Velocidade ao atingir o primeiro vermelho
 
 # Flags para controlar se a velocidade já foi alterada
 atingiu_verde = False
+atingiu_laranja = False
 atingiu_vermelho = False
+
 # A direção inicial será diagonal. Normalizamos o vetor [1, 1] e multiplicamos pela velocidade.
 ball_move = [velocidade_nivel_1 / (2**0.5), velocidade_nivel_1 / (2**0.5)]
 
@@ -124,25 +127,35 @@ def moviment_ball(ball, vidas):
         moviment[0] = -moviment[0]
         som_colisao.play()
 
-    # Sistema de contagem de vidas        
+    # Sistema de contagem de vidas      
     if ball.y + ball_size >= screen_size[1]:
-         som_perda.play()
-         vidas -= 1
-         if vidas > 0:
-             ball.x = screen_size[0] // 2
-             ball.y = screen_size[1] // 2
-             moviment[0] = velocidade_nivel_1/math.sqrt(2)
-             moviment[1] = -velocidade_nivel_1/math.sqrt(2)
-             return moviment, vidas
-         else:
-             return None, vidas #acabou as vidas
+        som_perda.play()
+        vidas -= 1
+        if vidas > 0:
+            ball.x = screen_size[0] // 2
+            ball.y = screen_size[1] // 2
+            
+            velocidade_atual_mantida = velocidade_nivel_1
+            if atingiu_verde:
+                velocidade_atual_mantida = velocidade_nivel_2
+            if atingiu_laranja:
+                velocidade_atual_mantida = velocidade_nivel_3
+            if atingiu_vermelho:
+                velocidade_atual_mantida = velocidade_nivel_4
+            
+            moviment[0] = velocidade_atual_mantida / math.sqrt(2)
+            moviment[1] = -velocidade_atual_mantida / math.sqrt(2)
+            
+            return moviment, vidas
+        else:
+            return None, vidas #acabou as vidas
 
     return moviment, vidas
     
 blocks = create_blocks(blocks_lines, lines_blocks)
 
 def ball_collision_player(ball, player):
-    global atingiu_verde, atingiu_vermelho
+    global atingiu_verde, atingiu_laranja, atingiu_vermelho
     if ball.colliderect(player):
         som_colisao.play()
         if ball_move[1] > 0:
@@ -156,22 +169,43 @@ def ball_collision_player(ball, player):
             elif new_speed_x < -max_speed_x:
                 new_speed_x = -max_speed_x
             ball_move[0] = new_speed_x
-            # Começamos com a velocidade base.
+            
             velocidade_alvo_atual = velocidade_nivel_1
-
-            # Se o nível 2 foi ativado, usamos a velocidade 2.
             if atingiu_verde:
                 velocidade_alvo_atual = velocidade_nivel_2
-            
-            # Se o nível 3 foi ativado, ele SOBRESCREVE a velocidade 2.
-            # Usamos um 'if' separado em vez de 'elif' para garantir essa prioridade.
-            if atingiu_vermelho:
+            if atingiu_laranja:
                 velocidade_alvo_atual = velocidade_nivel_3
+            if atingiu_vermelho:
+                velocidade_alvo_atual = velocidade_nivel_4
+
             velocidade_atual = (ball_move[0]**2 + ball_move[1]**2)**0.5
             if velocidade_atual > 0:
                 fator = velocidade_alvo_atual / velocidade_atual
                 ball_move[0] *= fator
                 ball_move[1] *= fator
+
+            # --- INÍCIO DA CORREÇÃO DO BUG ---
+            # Garante uma velocidade vertical mínima para evitar que a bola fique presa.
+            min_vertical_speed = 1.5  # Define uma velocidade vertical mínima
+            
+            if abs(ball_move[1]) < min_vertical_speed:
+                # Mantém o sinal original (sempre será para cima após o rebote)
+                ball_move[1] = -min_vertical_speed
+
+                # RE-NORMALIZAÇÃO: Como alteramos um componente, a velocidade total está errada.
+                # Precisamos ajustar o componente X para manter a velocidade_alvo_atual.
+                # Usando Pitágoras: X_novo^2 + Y_novo^2 = V_total^2
+                # X_novo = sqrt(V_total^2 - Y_novo^2)
+                new_speed_x_squared = velocidade_alvo_atual**2 - ball_move[1]**2
+                if new_speed_x_squared > 0:
+                    new_speed_x = math.sqrt(new_speed_x_squared)
+                    # Mantém a direção horizontal original (esquerda ou direita)
+                    if ball_move[0] < 0:
+                        ball_move[0] = -new_speed_x
+                    else:
+                        ball_move[0] = new_speed_x
+            # --- FIM DA CORREÇÃO DO BUG ---
+
 
 while not end_game:
     resultado = moviment_ball(ball,vidas)
@@ -185,10 +219,10 @@ while not end_game:
     update_player_movement()
 
     if resultado is None:  #se acabar as vidas o jogo acaba
-         pygame.display.flip()
-         break
+        pygame.display.flip()
+        break
     else:
-         ball_move, vidas = resultado
+        ball_move, vidas = resultado
 
 
     ball_collision_player(ball, player)
@@ -203,16 +237,24 @@ while not end_game:
 
             # Se atingir um bloco VERMELHO e for a PRIMEIRA VEZ
             if cor_do_bloco == color["red"] and not atingiu_vermelho:
-                atingiu_vermelho = True # Marca que já passamos para o nível 3
-                atingiu_verde = True    # Nível 3 também conta como tendo passado pelo nível 2
-                velocidade_alvo = velocidade_nivel_3
-                print("NÍVEL 3 de velocidade ativado!") # Mensagem de feedback (opcional)
+                atingiu_vermelho = True # Marca que já passamos para o nível 4
+                atingiu_laranja = True  # Nível 4 também conta como tendo passado pelos níveis anteriores
+                atingiu_verde = True
+                velocidade_alvo = velocidade_nivel_4
+                print("NÍVEL 4 de velocidade ativado!") # Mensagem de feedback
 
-            # Se atingir um bloco VERDE e for a PRIMEIRA VEZ (e não tivermos ativado o nível 3 ainda)
+            # Se atingir um bloco LARANJA e for a PRIMEIRA VEZ (e não tivermos ativado o nível 4 ainda)
+            elif cor_do_bloco == color["orange"] and not atingiu_laranja:
+                atingiu_laranja = True # Marca que já passamos para o nível 3
+                atingiu_verde = True
+                velocidade_alvo = velocidade_nivel_3
+                print("NÍVEL 3 de velocidade ativado!") # Mensagem de feedback
+
+            # Se atingir um bloco VERDE e for a PRIMEIRA VEZ (e não tivermos ativado níveis superiores ainda)
             elif cor_do_bloco == color["green"] and not atingiu_verde:
                 atingiu_verde = True # Marca que já passamos para o nível 2
                 velocidade_alvo = velocidade_nivel_2
-                print("NÍVEL 2 de velocidade ativado!") # Mensagem de feedback (opcional)
+                print("NÍVEL 2 de velocidade ativado!") # Mensagem de feedback
 
             # Se a velocidade_alvo foi definida, precisamos ajustar o vetor ball_move
             if velocidade_alvo > 0:
