@@ -319,14 +319,14 @@ while not end_game:
     x_pos_score = screen_size[0] // 2 + 100 
     screen.blit(score_texto, (x_pos_score, y_pos_top))
 
-    # --- 2. VIDAS (LIVES) ---
-    # Exibe apenas o número de vidas restantes, como os dígitos '1' e '2' da imagem
+    # --- 2. VIDAS 
+    # Exibe apenas o número de vidas restantes
     vidas_texto = font.render(f"{vidas}", True, color["white"])
     # Posição: Superior Esquerdo (onde o '1' está na imagem)
     screen.blit(vidas_texto, (30, y_pos_top))
 
-    # --- 3. LABEL (Opcional: para o estilo 'P1' ou 'P2' da imagem) ---
-    player_label = font.render("P1", True, color["white"])
+    # --- 3. Divisão
+    player_label = font.render("||", True, color["white"])
     # Posição: Center-Left (onde o '2' está na imagem)
     screen.blit(player_label, (screen_size[0] // 2 - 100, y_pos_top))
     
