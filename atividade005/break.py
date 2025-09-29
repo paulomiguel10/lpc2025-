@@ -1,10 +1,11 @@
 # breakout
 
 #teste de primeiro comentário do código break- DESKTOP-1RLNS3S.py
-
+import math
 import pygame
 
 pygame.init()
+pygame.mixer.init()
 
 screen_size = (800, 800)
 screen = pygame.display.set_mode(screen_size)
@@ -38,7 +39,6 @@ def create_blocks(blocks_line, lines_blocks):
 
     return blocks
 
-
 color = {
     "white": (255, 255, 255),
     "black": (0, 0, 0),
@@ -58,6 +58,7 @@ pontos_por_cor = {
 }
 
 end_game = False
+vidas = 3 
 score = 0
 velocidade_nivel_1 = 2.5 # Velocidade inicial
 velocidade_nivel_2 = 4.0 # Velocidade ao atingir o primeiro verde
@@ -74,7 +75,6 @@ def drawn_startgame():
     pygame.draw.rect(screen, color["blue"], player)
     pygame.draw.rect(screen, color["white"], ball)
 
-
 # cores por linha
 cores_linhas = [color["red"], color["red"], color["orange"], color["orange"],
                 color["green"], color["green"], color["yellow"], color["yellow"]]
@@ -86,8 +86,6 @@ def drawn_blocks(blocks):
         linha = idx // blocks_lines
         pygame.draw.rect(screen, cores_linhas[linha], block) #função para enumerar os blocos sobrepondo-os
         
-
-
 def update_player_movement():
     keys = pygame.key.get_pressed()
 
@@ -99,30 +97,47 @@ def update_player_movement():
         if player.x > 0:
             player.x = player.x - 5
 
+som_blocos = pygame.mixer.Sound("C:/Users/Paulo/lpc2025-/atividade005/assets/breaksound.wav")
+som_colisao = pygame.mixer.Sound("C:/Users/Paulo/lpc2025-/atividade005/assets/bounce.wav")
+som_perda = pygame.mixer.Sound("C:/Users/Paulo/lpc2025-/atividade005/assets/wrong-buzzer-6268.mp3")
 
-def moviment_ball(ball):
+def moviment_ball(ball, vidas):
+    global ball_move
     moviment = ball_move
     ball.x = ball.x + moviment[0]
     ball.y = ball.y + moviment[1]
 
     if ball.x <= 0:
         moviment[0] = -moviment[0]
+        som_colisao.play()
     if ball.y < 0:
         moviment[1] = -moviment[1]
+        som_colisao.play()
     if ball.x + ball_size >= screen_size[0]:
         moviment[0] = -moviment[0]
+        som_colisao.play()
+
+    # Sistema de contagem de vidas        
     if ball.y + ball_size >= screen_size[1]:
-        moviment[1] = -moviment[1]
+         som_perda.play()
+         vidas -= 1
+         if vidas > 0:
+             ball.x = screen_size[0] // 2
+             ball.y = screen_size[1] // 2
+             moviment[0] = velocidade_nivel_1/math.sqrt(2)
+             moviment[1] = -velocidade_nivel_1/math.sqrt(2)
+             return moviment, vidas
+         else:
+             return None, vidas #acabou as vidas
 
-    return moviment
-
-
+    return moviment, vidas
+    
 blocks = create_blocks(blocks_lines, lines_blocks)
-
 
 def ball_collision_player(ball, player):
     global atingiu_verde, atingiu_vermelho
     if ball.colliderect(player):
+        som_colisao.play()
         if ball_move[1] > 0:
             ball.bottom = player.top
             ball_move[1] = -ball_move[1]
@@ -152,18 +167,28 @@ def ball_collision_player(ball, player):
                 ball_move[1] *= fator
 
 while not end_game:
+    resultado = moviment_ball(ball,vidas)
     drawn_startgame()
     drawn_blocks(blocks)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             end_game = True
 
     update_player_movement()
 
+    if resultado is None:  #se acabar as vidas o jogo acaba
+         pygame.display.flip()
+         break
+    else:
+         ball_move, vidas = resultado
+
+
     ball_collision_player(ball, player)
    # Colisão com blocos
     for idx, block in enumerate(blocks[:]):
         if ball.colliderect(block):
+            som_blocos.play()
             # 1. Descobrir a cor do bloco que foi atingido
             linha_do_bloco = idx // blocks_lines
             cor_do_bloco = cores_linhas[linha_do_bloco]
@@ -208,7 +233,11 @@ while not end_game:
     score_text = font.render(f"Score: {score}", True, color["white"])
     screen.blit(score_text, (10, 10))
 
-    ball_move = moviment_ball(ball)
+    #Desenhar sistema de vidas
+    vidas_texto = font.render(f"Vidas: {vidas}",True ,color["white"] )
+    screen.blit(vidas_texto,(10,40))
+    
+
     pygame.time.wait(5)
     pygame.display.flip()
 
