@@ -18,7 +18,7 @@ player_size = 100
 player = pygame.Rect(400, 750, player_size, 15)
 
 
-blocks_lines = 14 
+blocks_lines = 14  # antes 14
 lines_blocks = 8
 
 def create_blocks(blocks_line, lines_blocks):
@@ -81,12 +81,17 @@ def drawn_startgame():
 cores_linhas = [color["red"], color["red"], color["orange"], color["orange"],
                 color["green"], color["green"], color["yellow"], color["yellow"]]
 
-blocks = create_blocks (blocks_lines, lines_blocks) #cria os nvos blocos superiores e adiciona as cores sobrepondo uma as outras
+blocks = create_blocks(blocks_lines, lines_blocks) #cria os nvos blocos superiores e adiciona as cores sobrepondo uma as outras
+
+# Criar lista que mantém a cor de cada bloco individualmente
+cores_blocos = []
+for linha in range(lines_blocks):
+    for _ in range(blocks_lines):
+        cores_blocos.append(cores_linhas[linha])
 
 def drawn_blocks(blocks):
     for idx, block in enumerate(blocks):
-        linha = idx // blocks_lines
-        pygame.draw.rect(screen, cores_linhas[linha], block) #função para enumerar os blocos sobrepondo-os
+        pygame.draw.rect(screen, cores_blocos[idx], block)  # usa cor específica de cada bloco
         
 def update_player_movement():
     keys = pygame.key.get_pressed()
@@ -188,12 +193,11 @@ while not end_game:
 
     ball_collision_player(ball, player)
    # Colisão com blocos
-    for idx, block in enumerate(blocks[:]):
+    for idx, block in enumerate(blocks[:] ) :
         if ball.colliderect(block):
             som_blocos.play()
             # 1. Descobrir a cor do bloco que foi atingido
-            linha_do_bloco = idx // blocks_lines
-            cor_do_bloco = cores_linhas[linha_do_bloco]
+            cor_do_bloco = cores_blocos[idx]  # usa cor específica do bloco
 
             velocidade_alvo = 0 # Variável para guardar a nova velocidade desejada
 
@@ -227,9 +231,9 @@ while not end_game:
             # 3. Atualizar a lógica do jogo
             ball_move[1] = -ball_move[1]
             blocks.remove(block)
+            cores_blocos.pop(idx)  # remove a cor correspondente
             score += pontos_ganhos
-            break  # Evita múltiplas colisões na mesma atualização
-
+            break  
     # Desenhar score proporcional
     font = pygame.font.SysFont(None, int(screen_size[1]*0.04))
     score_text = font.render(f"Score: {score}", True, color["white"])
