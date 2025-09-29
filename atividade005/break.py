@@ -19,8 +19,8 @@ player_size = 100
 player = pygame.Rect(400, 750, player_size, 15)
 
 
-blocks_lines = 14  # antes 14
-lines_blocks = 9
+blocks_lines = 14 
+lines_blocks = 8
 
 def create_blocks(blocks_line, lines_blocks):
     width_size, height_size = screen_size
@@ -83,7 +83,7 @@ def drawn_startgame():
     pygame.draw.rect(screen, color["white"], ball)
 
 # cores por linha
-cores_linhas = [color ["black"], color["red"], color["red"], color["orange"], color["orange"],
+cores_linhas = [ color["red"], color["red"], color["orange"], color["orange"],
                 color["green"], color["green"], color["yellow"], color["yellow"]]
 
 blocks = create_blocks(blocks_lines, lines_blocks) #cria os nvos blocos superiores e adiciona as cores sobrepondo uma as outras
@@ -93,15 +93,6 @@ cores_blocos = []
 for linha in range(lines_blocks):
     for _ in range(blocks_lines):
         cores_blocos.append(cores_linhas[linha])
-
-#barreira para bola não passar direto
-barreira_inquebrav = pygame.Rect(
-    0,  # X inicial
-    int(screen_size[1]*0.1) - int(screen_size[1]*0.02),  # ligeiramente acima do primeiro nível (linha vermelha)
-    screen_size[0],  # largura total da tela
-    int(screen_size[1]*0.02)  # altura da barreira
-)
-# fim da barreira
 
 
 def drawn_blocks(blocks):
@@ -200,10 +191,6 @@ def ball_collision_player(ball, player):
                 ball_move[0] *= fator
                 ball_move[1] *= fator
 
-            # Colisão com barreira inquebrável
-            if ball.colliderect(barreira_inquebrav):
-                ball_move[1] = -ball_move[1]  # apenas inverte a direção vertical
-                som_colisao.play()
 
 
             # --- INÍCIO DA CORREÇÃO DO BUG ---
@@ -256,11 +243,6 @@ while not end_game:
             cor_do_bloco = cores_blocos[idx]  # usa cor específica do bloco
 
             velocidade_alvo = 0 # Variável para guardar a nova velocidade desejada
-
-            if cor_do_bloco == color["black"]:# Apenas rebate a bola, não remove o bloco e não dá pontos
-                ball_move[1] = -ball_move[1]
-                break  # sai do loop para não quebrar múltiplos blocos
-                velocidade_alvo = 0 # Variável para guardar a nova velocidade desejada
 
             # Se atingir um bloco VERMELHO e for a PRIMEIRA VEZ
             if cor_do_bloco == color["red"] and not atingiu_vermelho:
