@@ -1,6 +1,6 @@
-# breakout
+# breakout - one block per paddle hit, blocks solid after break
 
-# Teste de primeiro comentário do código break
+# First test comment of the break code
 import math
 import pygame
 from pathlib import Path
@@ -8,43 +8,23 @@ from pathlib import Path
 pygame.init()
 pygame.mixer.init()
 
+# SCREEN SETUP
 screen_size = (800, 800)
 screen = pygame.display.set_mode(screen_size)
 pygame.display.set_caption("Break Out")
 
+# PLAYER AND BALL SETUP
 ball_size = 15
 ball = pygame.Rect(400, 500, ball_size, ball_size)
 
 player_size = 100
 player = pygame.Rect(400, 750, player_size, 15)
 
-blocks_lines = 14
-lines_blocks = 8
+blocks_per_line = 14
+lines_of_blocks = 8
 
-
-def create_blocks(blocks_line, lines_blocks):
-    """Cria blocos na tela com espaçamento definido."""
-    width_size, height_size = screen_size
-    block_distance = int(screen_size[0] * 0.008)  # diminui espaço entre blocos
-    width_block = width_size / blocks_line - block_distance
-    height_block = int(screen_size[1] * 0.015)  # altura mais fina
-    line_distance = height_block + int(screen_size[1] * 0.01)
-
-    blocks = []
-    offset_top = int(screen_size[1] * 0.1)
-    for j in range(lines_blocks):
-        for i in range(blocks_line):
-            block = pygame.Rect(
-                i * (width_block + block_distance),
-                offset_top + j * line_distance,
-                width_block,
-                height_block
-            )
-            blocks.append(block)
-    return blocks
-
-
-color = {
+# COLLORS
+colors = {
     "white": (255, 255, 255),
     "black": (0, 0, 0),
     "green": (0, 255, 0),
@@ -54,62 +34,108 @@ color = {
     "red": (255, 0, 0),
 }
 
-# Mapeia cada cor para um valor de pontos
-pontos_por_cor = {
-    color["white"]: 0,
-    color["yellow"]: 1,
-    color["green"]: 3,
-    color["orange"]: 5,
-    color["red"]: 7
+# Map each color to a score value
+points_per_color = {
+    colors["white"]: 0,
+    colors["yellow"]: 1,
+    colors["green"]: 3,
+    colors["orange"]: 5,
+    colors["red"]: 7
 }
 
+# GAME VARIABLES
 end_game = False
-vidas = 3
+lives = 3
 score = 0
-velocidade_nivel_1 = 2.0
-velocidade_nivel_2 = 3.5
-velocidade_nivel_3 = 4.5
-velocidade_nivel_4 = 5.5
+speed_level_1 = 2.0
+speed_level_2 = 3.5
+speed_level_3 = 4.5
+speed_level_4 = 5.5
 
-# Flags para controlar se a velocidade já foi alterada
-atingiu_verde = False
-atingiu_laranja = False
-atingiu_vermelho = False
-
-# Direção inicial da bola diagonal normalizada
-ball_move = [velocidade_nivel_1 / (2**0.5),
-             velocidade_nivel_1 / (2**0.5)]
+# Flags to control if the speed has already been changed
+hit_green = False
+hit_orange = False
+hit_red = False
 
 
-def drawn_startgame():
-    """Desenha bola e jogador na tela inicial."""
-    screen.fill(color["black"])
-    pygame.draw.rect(screen, color["blue"], player)
-    pygame.draw.rect(screen, color["white"], ball)
+# Initial diagonal normalized ball direction
+ball_move = [speed_level_1 / (2**0.5), speed_level_1 / (2**0.5)]
+can_break_block = True  # Allow breaking 1 block after paddle hit
 
 
-# cores por linha
-cores_linhas = [
-    color["red"], color["red"], color["orange"], color["orange"],
-    color["green"], color["green"], color["yellow"], color["yellow"]
+# BLOCKS
+def create_blocks(blocks_per_line, lines_of_blocks):
+    """Create blocks on the screen with defined spacing."""
+    width_size, height_size = screen_size
+    block_distance = int(width_size * 0.008)  # reduce space between blocks
+    block_width = width_size / blocks_per_line - block_distance
+    block_height = int(height_size * 0.015)  # thinner height
+    line_distance = block_height + int(height_size * 0.01)
+
+    blocks = []
+    offset_top = int(height_size * 0.1)
+    for j in range(lines_of_blocks):
+        for i in range(blocks_per_line):
+            block = pygame.Rect(
+                i * (block_width + block_distance),
+                offset_top + j * line_distance,
+                block_width,
+                block_height
+            )
+            blocks.append(block)
+    return blocks
+
+
+# Colors per line
+line_colors = [
+    colors["red"], colors["red"], colors["orange"], colors["orange"],
+    colors["green"], colors["green"], colors["yellow"], colors["yellow"]
 ]
 
-# Cria blocos e cores
-blocks = create_blocks(blocks_lines, lines_blocks)
-cores_blocos = []
-for linha in range(lines_blocks):
-    for _ in range(blocks_lines):
-        cores_blocos.append(cores_linhas[linha])
+# Create blocks and colors
+blocks = create_blocks(blocks_per_line, lines_of_blocks)
+block_colors = []
+for line in range(lines_of_blocks):
+    for _ in range(blocks_per_line):
+        block_colors.append(line_colors[line])
+
+# SOUNDS SETUP
+BASE = Path(__file__).resolve().parent  # script folder
+
+# Game sounds
+sound_blocks = pygame.mixer.Sound(str(BASE / "assets/breaksound.wav"))
+sound_collision = pygame.mixer.Sound(str(BASE / "assets/bounce.wav"))
+sound_loss = pygame.mixer.Sound(str(BASE / "assets/wrong-buzzer-6268.mp3"))
 
 
-def drawn_blocks(blocks):
-    """Desenha blocos na tela com cores específicas."""
+# DRAWING FUNCTIONS
+def draw_start_screen():
+    """Draw ball and player on the start screen."""
+    screen.fill(colors["black"])
+    pygame.draw.rect(screen, colors["blue"], player)
+    pygame.draw.rect(screen, colors["white"], ball)
+
+
+def draw_blocks(blocks):
+    """Draw blocks on the screen with specific colors."""
     for idx, block in enumerate(blocks):
-        pygame.draw.rect(screen, cores_blocos[idx], block)
+        pygame.draw.rect(screen, block_colors[idx], block)
+
+
+def draw_end_screen(message):
+    """Draw end game screen with a message."""
+    screen.fill(colors["black"])
+    font = pygame.font.SysFont(None, 80)
+    text = font.render(message, True, colors["white"])
+    center_coords = (screen_size[0] // 2, screen_size[1] // 2)
+    text_rect = text.get_rect(center=center_coords)
+    screen.blit(text, text_rect)
+    pygame.display.flip()
+    pygame.time.wait(3000)
 
 
 def update_player_movement():
-    """Atualiza posição do jogador com base em teclas."""
+    """Update player position based on keys."""
     keys = pygame.key.get_pressed()
     if keys[pygame.K_RIGHT] and (player.x + player_size) < screen_size[0]:
         player.x += 5
@@ -117,179 +143,183 @@ def update_player_movement():
         player.x -= 5
 
 
-BASE = Path(__file__).resolve().parent  # pasta do script
-
-# Sons do jogo
-som_blocos = pygame.mixer.Sound(str(BASE / "assets/breaksound.wav"))
-som_colisao = pygame.mixer.Sound(str(BASE / "assets/bounce.wav"))
-som_perda = pygame.mixer.Sound(str(BASE / "assets/wrong-buzzer-6268.mp3"))
-
-
-def moviment_ball(ball, vidas):
-    """Movimenta a bola e atualiza vidas se necessário."""
+# BALL MOVEMENT
+def move_ball(ball, lives):
+    """Move the ball and update lives if necessary."""
     global ball_move
-    moviment = ball_move
-    ball.x += moviment[0]
-    ball.y += moviment[1]
+    movement = ball_move
+    ball.x += movement[0]
+    ball.y += movement[1]
 
-    # Colisões com paredes
-    if ball.x <= 0 or ball.x + ball_size >= screen_size[0]:
-        moviment[0] = -moviment[0]
-        som_colisao.play()
+    # Wall collisions
+    if ball.x <= 0:
+        ball.x = 0
+        movement[0] = -movement[0]
+        sound_collision.play()
+    if ball.x + ball_size >= screen_size[0]:
+        ball.x = screen_size[0] - ball_size
+        movement[0] = -movement[0]
+        sound_collision.play()
     if ball.y < 0:
-        moviment[1] = -moviment[1]
-        som_colisao.play()
+        ball.y = 0
+        movement[1] = -movement[1]
+        sound_collision.play()
 
-    # Sistema de vidas
+    # Lives system
     if ball.y + ball_size >= screen_size[1]:
-        som_perda.play()
-        vidas -= 1
-        if vidas > 0:
+        sound_loss.play()
+        lives -= 1
+        if lives > 0:
             ball.x = screen_size[0] // 2
             ball.y = screen_size[1] // 2
 
-            velocidade_atual_mantida = velocidade_nivel_1
-            if atingiu_verde:
-                velocidade_atual_mantida = velocidade_nivel_2
-            if atingiu_laranja:
-                velocidade_atual_mantida = velocidade_nivel_3
-            if atingiu_vermelho:
-                velocidade_atual_mantida = velocidade_nivel_4
+            # Keep speed according to previous hits
+            current_speed = speed_level_1
+            if hit_green:
+                current_speed = speed_level_2
+            if hit_orange:
+                current_speed = speed_level_3
+            if hit_red:
+                current_speed = speed_level_4
 
-            moviment[0] = velocidade_atual_mantida / math.sqrt(2)
-            moviment[1] = -velocidade_atual_mantida / math.sqrt(2)
-
-            return moviment, vidas
+            movement[0] = current_speed / math.sqrt(2)
+            movement[1] = -current_speed / math.sqrt(2)
+            return movement, lives
         else:
-            return None, vidas  # acabou as vidas
+            return None, lives  # out of lives
+    return movement, lives
 
-    return moviment, vidas
 
-
+# BALL COLLISION
 def ball_collision_player(ball, player):
-    """Verifica colisão da bola com o jogador e ajusta velocidade."""
-    global atingiu_verde, atingiu_laranja, atingiu_vermelho
-    if ball.colliderect(player):
-        som_colisao.play()
-        if ball_move[1] > 0:
-            ball.bottom = player.top
-            ball_move[1] = -ball_move[1]
-            offset = ball.centerx - player.centerx
-            new_speed_x = offset / 10
-            max_speed_x = 6
-            if new_speed_x > max_speed_x:
-                new_speed_x = max_speed_x
-            elif new_speed_x < -max_speed_x:
-                new_speed_x = -max_speed_x
-            ball_move[0] = new_speed_x
+    """Check ball collision with player and adjust speed."""
+    global hit_green, hit_orange, hit_red, can_break_block
+    if ball.colliderect(player) and ball_move[1] > 0:
+        sound_collision.play()
+        ball.bottom = player.top
+        ball_move[1] = -ball_move[1]
+        offset = ball.centerx - player.centerx
+        new_speed_x = max(-6, min(6, offset / 10))
+        ball_move[0] = new_speed_x
 
-            # Ajusta a velocidade alvo de acordo com os níveis
-            velocidade_alvo_atual = velocidade_nivel_1
-            if atingiu_verde:
-                velocidade_alvo_atual = velocidade_nivel_2
-            if atingiu_laranja:
-                velocidade_alvo_atual = velocidade_nivel_3
-            if atingiu_vermelho:
-                velocidade_alvo_atual = velocidade_nivel_4
+        # Adjust target speed according to levels
+        target_speed = speed_level_1
+        if hit_green:
+            target_speed = speed_level_2
+        if hit_orange:
+            target_speed = speed_level_3
+        if hit_red:
+            target_speed = speed_level_4
 
-            velocidade_atual = (ball_move[0]**2 + ball_move[1]**2)**0.5
-            if velocidade_atual > 0:
-                fator = velocidade_alvo_atual / velocidade_atual
-                ball_move[0] *= fator
-                ball_move[1] *= fator
+        current_speed = math.sqrt(ball_move[0]**2 + ball_move[1]**2)
+        if current_speed > 0:
+            factor = target_speed / current_speed
+            ball_move[0] *= factor
+            ball_move[1] *= factor
 
-            # --- Correção do bug ---
-            min_vertical_speed = 1.5  # velocidade vertical mínima
-            if abs(ball_move[1]) < min_vertical_speed:
-                ball_move[1] = -min_vertical_speed
-                new_speed_x_squared = (velocidade_alvo_atual**2 -
-                                       ball_move[1]**2)
-                if new_speed_x_squared > 0:
-                    new_speed_x = math.sqrt(new_speed_x_squared)
-                    if ball_move[0] < 0:
-                        ball_move[0] = -new_speed_x
-                    else:
-                        ball_move[0] = new_speed_x
-            # --- Fim da correção ---
+        # Reset permission to break one block per paddle hit
+        can_break_block = True
 
 
+# MAIN LOOP
 while not end_game:
-    resultado = moviment_ball(ball, vidas)
-    drawn_startgame()
-    drawn_blocks(blocks)
+    result = move_ball(ball, lives)
+    draw_start_screen()
+    draw_blocks(blocks)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             end_game = True
 
     update_player_movement()
-
-    if resultado is None:  # Se acabar as vidas, o jogo termina
-        pygame.display.flip()
+    if result[0] is None:
+        draw_end_screen("GAME OVER")
         break
     else:
-        ball_move, vidas = resultado
+        ball_move, lives = result
 
     ball_collision_player(ball, player)
 
-    # Colisão com blocos
-    for idx, block in enumerate(blocks[:]):
-        if ball.colliderect(block):
-            som_blocos.play()
+    # BLOCK COLLISION
+    collided_blocks = [
+        idx
+        for idx, block in enumerate(blocks)
+        if ball.colliderect(block)
+    ]
+    for idx in collided_blocks:
+        block = blocks[idx]
 
-            cor_do_bloco = cores_blocos[idx]
-            velocidade_alvo = 0
+        # Only break one block per paddle hit
+        if can_break_block:
+            can_break_block = False  # Already broke one block
+            # Points gained and speed update
+            block_color = block_colors[idx]
+            target_speed = 0
+            if block_color == colors["red"] and not hit_red:
+                hit_red = True
+                hit_orange = True
+                hit_green = True
+                target_speed = speed_level_4
+            elif block_color == colors["orange"] and not hit_orange:
+                hit_orange = True
+                hit_green = True
+                target_speed = speed_level_3
+            elif block_color == colors["green"] and not hit_green:
+                hit_green = True
+                target_speed = speed_level_2
 
-            # Ajusta níveis de velocidade
-            if cor_do_bloco == color["red"] and not atingiu_vermelho:
-                atingiu_vermelho = True
-                atingiu_laranja = True
-                atingiu_verde = True
-                velocidade_alvo = velocidade_nivel_4
-                print("Nível 4 de velocidade ativado!")
-            elif cor_do_bloco == color["orange"] and not atingiu_laranja:
-                atingiu_laranja = True
-                atingiu_verde = True
-                velocidade_alvo = velocidade_nivel_3
-                print("Nível 3 de velocidade ativado!")
-            elif cor_do_bloco == color["green"] and not atingiu_verde:
-                atingiu_verde = True
-                velocidade_alvo = velocidade_nivel_2
-                print("Nível 2 de velocidade ativado!")
+            if target_speed > 0:
+                speed_current = math.sqrt(ball_move[0]**2 + ball_move[1]**2)
+                if speed_current > 0:
+                    factor = target_speed / speed_current
+                    ball_move[0] *= factor
+                    ball_move[1] *= factor
 
-            # Ajusta vetor ball_move se velocidade_alvo for definida
-            if velocidade_alvo > 0:
-                velocidade_atual = (ball_move[0]**2 + ball_move[1]**2)**0.5
-                if velocidade_atual > 0:
-                    fator = velocidade_alvo / velocidade_atual
-                    ball_move[0] *= fator
-                    ball_move[1] *= fator
+            score += points_per_color.get(block_color, 1)
+            sound_blocks.play()
 
-            # Pontos ganhos e atualização do score
-            pontos_ganhos = pontos_por_cor.get(cor_do_bloco, 1)
+            # Remove broken block
+            blocks.pop(idx)
+            block_colors.pop(idx)
+
+        # Treat remaining blocks as solid
+        overlap_x = min(ball.right - block.left, block.right - ball.left)
+        overlap_y = min(ball.bottom - block.top, block.bottom - ball.top)
+        if overlap_x < overlap_y:
+            if ball.centerx < block.centerx:
+                ball.right = block.left
+            else:
+                ball.left = block.right
+            ball_move[0] = -ball_move[0]
+        else:
+            if ball.centery < block.centery:
+                ball.bottom = block.top
+            else:
+                ball.top = block.bottom
             ball_move[1] = -ball_move[1]
-            blocks.remove(block)
-            cores_blocos.pop(idx)
-            score += pontos_ganhos
-            break
 
-    # Desenhar score e vidas
+    # Win condition
+    if len(blocks) == 0:
+        draw_end_screen("YOU WIN!")
+        break
+
+    # HUD
     font_size = int(screen_size[1] * 0.05)
     font = pygame.font.SysFont(None, font_size)
     y_pos_top = 10
 
-    # Score formatado
-    score_formatado = f"{score:03d}"
-    score_texto = font.render(score_formatado, True, color["white"])
+    # Formatted score
+    formatted_score = f"{score:03d}"
+    score_text = font.render(formatted_score, True, colors["white"])
     x_pos_score = screen_size[0] // 2 + 100
-    screen.blit(score_texto, (x_pos_score, y_pos_top))
+    screen.blit(score_text, (x_pos_score, y_pos_top))
 
-    # Vidas restantes
-    vidas_texto = font.render(f"{vidas}", True, color["white"])
-    screen.blit(vidas_texto, (30, y_pos_top))
+    # Remaining lives
+    lives_text = font.render(f"{lives}", True, colors["white"])
+    screen.blit(lives_text, (30, y_pos_top))
 
-    # Divisão central
-    player_label = font.render("||", True, color["white"])
+    # Central divider
+    player_label = font.render("||", True, colors["white"])
     screen.blit(player_label, (screen_size[0] // 2 - 100, y_pos_top))
 
     pygame.time.wait(5)
