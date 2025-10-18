@@ -26,7 +26,7 @@ class player:
         self.x = x
         self.y = y
 
-        self.original_image = pygame.image.load("C:\\Users\\Paulo\\lpc2025-\\atividade007\\aviao.png").convert_alpha()
+        self.original_image = pygame.image.load("atividade007/aviao.png").convert_alpha()
         self.original_image = pygame.transform.scale_by(self.original_image, 5)
 
 #--------------Mudando cor do Player 1-------------------------
