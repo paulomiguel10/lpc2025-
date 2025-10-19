@@ -25,6 +25,10 @@ running = True  # controle do loop principal
 shots = []  # lista para armazenar os tiros
 shot_size = 5   # tamanho do tiro
 shot_speed = 15  # velocidade do tiro (+ ou - dependendo da direção)
+player1_health = 5
+player2_health = 5
+player1_score = 0
+player2_score = 0
 
 
 # CLASSE DO PLAYER
@@ -160,7 +164,8 @@ while running:
                         "dx": shot_dx,
                         "dy": shot_dy,
                         "born_time": current_time,
-                        "color": GREEN
+                        "color": GREEN,
+                        "owner": "player1"
                     })
             if event.key == pygame.K_UP:
                 player1.toggle_movement()
@@ -195,7 +200,8 @@ while running:
                         "dx": shot_dx,
                         "dy": shot_dy,
                         "born_time": current_time,
-                        "color": ORANGE
+                        "color": ORANGE,
+                        "owner": "player2"
                     })
 
     screen.fill(DARK_BLUE)
@@ -205,6 +211,20 @@ while running:
     # Atualizar e desenhar tiros
     current_time = pygame.time.get_ticks()
     for shot in shots[:]:
+        # colisão com player 1
+        if shot["owner"] != "player1" and shot["rect"].colliderect(player1.rect):
+            player1_health -= 1
+            player1_score += 1
+            shots.remove(shot)
+            continue
+
+        # colisão com player 2
+        if shot["owner"] != "player2" and shot["rect"].colliderect(player2.rect):
+            player2_health -= 1
+            player2_score += 1
+            shots.remove(shot)
+            continue
+
         shot["rect"].x += shot["dx"]
         shot["rect"].y += shot["dy"]
 
@@ -227,5 +247,38 @@ while running:
     # Desenha jogadores
     screen.blit(player1.image, player1.rect)
     screen.blit(player2.image, player2.rect)
+    font = pygame.font.SysFont(None, 100)  # fonte padrão, tamanho 60
+    # Pontuação player1
+    score_text1 = font.render(f"{player1_score}", True, GREEN)
+    screen.blit(score_text1, (256, 20))
+    # Pontuação player2
+    score_text2 = font.render(f"{player2_score}", True, ORANGE)
+    screen.blit(score_text2, (768, 20))
+     #Desenhar nuvens na tela
+    cloud_color = (100,170, 255)
+    def draw_pixel_cloud(x, y, scale = 12):
+        pattern = [
+    "    XXXX    ",
+    "  XXXXXXXX  ",
+    " XXXXXXXXXX ",
+    "XXXXXXXXXXXX",
+    "XXXXXXXXXXXX",
+    " XXXXXXXXXX ",
+    "  XXXXXXXX  ",
+    "    XXXX    "
+        ]
+        for row_idx, row in enumerate(pattern):
+            for col_idx, pixel in enumerate(row):
+                if pixel == "X":
+                    rect = pygame.Rect(
+                        x + col_idx * scale,
+                        y + row_idx * scale,
+                        scale,
+                        scale
+                    )
+                    pygame.draw.rect(screen, cloud_color, rect)
+
+    draw_pixel_cloud(150,300,25)
+    draw_pixel_cloud(600,300,25)
     pygame.display.flip()
     clock.tick(60)
