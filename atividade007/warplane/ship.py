@@ -17,11 +17,10 @@ WINDOW_HEIGHT = GAME_HEIGHT * SCALE_FACTOR
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("Navezinha")
 clock = pygame.time.Clock()
-
+last_shot_time = 0
+shot_cooldown = 500  # ms
 
 class player:
-    
-
     def __init__(self, x, y, key_left, key_right, image_path, ):
         self.x = x
         self.y = y
@@ -92,16 +91,6 @@ class player:
         elif self.rect.centery > WINDOW_HEIGHT:
             self.rect.centery = 0
 
-colors = {
-    "white": (255, 255, 255),
-}
-
-
-# SHOT SETUP
-shot_size = 10
-
-
-
 # SHOT MOVEMENT
 def move_shot(shot):
     global shot_move
@@ -117,15 +106,15 @@ player1 = player(
     y = WINDOW_HEIGHT // 2,
     key_left=pygame.K_LEFT,
     key_right=pygame.K_RIGHT,
-    image_path="C:\\Users\\Paulo\\lpc2025-\\atividade007\\aviao.png")
+    image_path=("atividade007\\aviao.png"))
 
-#Player 2
+# Player 2
 player2 = player(
     x = WINDOW_WIDTH // 2 * 3,
     y = WINDOW_HEIGHT // 2,
     key_left=pygame.K_a,
     key_right=pygame.K_d,
-    image_path="C:\\Users\\Paulo\\lpc2025-\\atividade007\\aviao.png")
+    image_path=("atividade007\\aviao.png"))
 
 # Main loop
 running = True
@@ -141,26 +130,29 @@ while running:
         # Movimentos e disparo do player 1
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_DOWN:
+                current_time = pygame.time.get_ticks()
+                if current_time - last_shot_time >= shot_cooldown:
+                    last_shot_time = current_time  # atualiza o tempo do último tiro
 
-                # Calcular ponta da nave no momento do tiro
-                angle = player1.angle
-                rad = math.radians(angle)
+                    # Calcular ponta da nave no momento do tiro
+                    angle = player1.angle
+                    rad = math.radians(angle)
 
-                tip_x = player1.rect.centerx + math.cos(rad - math.pi/2) * (player1.original_image.get_height() / 2)
-                tip_y = player1.rect.centery + math.sin(rad - math.pi/2) * (player1.original_image.get_height() / 2)
+                    tip_x = player1.rect.centerx + math.cos(rad - math.pi/2) * (player1.original_image.get_height() / 2)
+                    tip_y = player1.rect.centery + math.sin(rad - math.pi/2) * (player1.original_image.get_height() / 2)
 
-                # Direção do tiro
-                shot_dx = math.cos(rad - math.pi/2) * shot_speed
-                shot_dy = math.sin(rad - math.pi/2) * shot_speed
+                    # Direção do tiro
+                    shot_dx = math.cos(rad - math.pi/2) * shot_speed
+                    shot_dy = math.sin(rad - math.pi/2) * shot_speed
 
-                # Adicionar tiro à lista
-                current_time = pygame.time.get_ticks() 
-                shots.append({
-                    "rect": pygame.Rect(tip_x - shot_size//2, tip_y - shot_size//2, shot_size, shot_size),
-                    "dx": shot_dx,
-                    "dy": shot_dy,
-                    "born_time": current_time #armazena quando o tiro foi criado
-                })
+                    # Adicionar tiro à lista
+                    shots.append({
+                        "rect": pygame.Rect(tip_x - shot_size//2, tip_y - shot_size//2, shot_size, shot_size),
+                        "dx": shot_dx,
+                        "dy": shot_dy,
+                        "born_time": current_time
+                    })
+
 
             if event.key == pygame.K_UP:
                 player1.toggle_movement()
@@ -168,6 +160,7 @@ while running:
             # Movimento do player 2
             if event.key == pygame.K_w:
                 player2.toggle_movement()
+
 
     screen.fill(DARK_BLUE)
     player1.update()
@@ -179,7 +172,7 @@ while running:
         shot["rect"].x += shot["dx"]
         shot["rect"].y += shot["dy"]
 
-        pygame.draw.rect(screen, (255,255,255), shot["rect"])
+        pygame.draw.rect(screen, (WHITE), shot["rect"])
 
         # Wrap-around horizontal e vertical
         if shot["rect"].top < 0:
