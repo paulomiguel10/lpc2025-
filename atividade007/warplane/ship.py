@@ -18,8 +18,8 @@ screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("Navezinha")
 clock = pygame.time.Clock()
 last_shot_time = 0
-shot_cooldown = 500  # ms
-
+shot_cooldown = 800  # ms
+shot_lifetime = 800  # ms
 
 class player:
     def __init__(self, x, y, key_left, key_right, image_path, ):
@@ -121,7 +121,7 @@ player2 = player(
 running = True
 shots = []
 shot_size = 10
-shot_speed = 5  # velocidade do tiro (+ ou - dependendo da direção)
+shot_speed = 15  # velocidade do tiro (+ ou - dependendo da direção)
 
 while running:
     for event in pygame.event.get():
@@ -133,34 +133,32 @@ while running:
             if event.key == pygame.K_DOWN:
                 current_time = pygame.time.get_ticks()
                 if current_time - last_shot_time >= shot_cooldown:
-                    last_shot_time = current_time  # att time of last shot
+                    last_shot_time = current_time  # atualiza o tempo do último tiro
 
-                    # Calcular ponta da nave no momento do tiro
-                    angle = player1.angle
-                    rad = math.radians(angle)
+                    # Use a mesma conversão de ângulo que o movimento da nave usa
+                    rad = math.radians(player1.angle - 270)
 
-                    tip_offset = (player1.original_image.get_height() / 2)
-                    tip_x = (player1.rect.centerx +
-                             math.cos(rad - math.pi / 2) * tip_offset)
-                    tip_y = (player1.rect.centery +
-                             math.sin(rad - math.pi / 2) * tip_offset)
+                    # distância do centro até a ponta (metade da altura da imagem original)
+                    tip_offset = player1.original_image.get_height() / 2
 
-                    # Direção do tiro
-                    shot_dx = math.cos(rad - math.pi/2) * shot_speed
-                    shot_dy = math.sin(rad - math.pi/2) * shot_speed
+                    # Calcular ponta da nave no momento do tiro (mesma lógica do movimento)
+                    tip_x = player1.rect.centerx + math.cos(rad) * tip_offset
+                    tip_y = player1.rect.centery - math.sin(rad) * tip_offset  # note o '-'
 
-                    # Adicionar tiro à lista
-                    rect_x = tip_x - shot_size // 2
-                    rect_y = tip_y - shot_size // 2
+                    # Direção do tiro: mesmo vetor usado para mover a nave (multiplicado pela velocidade)
+                    shot_dx = math.cos(rad) * shot_speed
+                    shot_dy = -math.sin(rad) * shot_speed
+
+                    # Adicionar tiro à lista (convertendo posições para int)
+                    rect_x = int(tip_x - shot_size // 2)
+                    rect_y = int(tip_y - shot_size // 2)
                     shots.append({
-                        "rect": pygame.Rect(
-                            int(rect_x), int(rect_y),
-                            shot_size, shot_size
-                        ),
+                        "rect": pygame.Rect(rect_x, rect_y, shot_size, shot_size),
                         "dx": shot_dx,
                         "dy": shot_dy,
                         "born_time": current_time
                     })
+
 
             if event.key == pygame.K_UP:
                 player1.toggle_movement()
@@ -192,7 +190,7 @@ while running:
         elif shot["rect"].right > WINDOW_WIDTH:
             shot["rect"].left = 0
 
-        if current_time - shot["born_time"] >= 400:
+        if current_time - shot["born_time"] >= shot_lifetime:
             shots.remove(shot)
 
     # Desenha jogadores
