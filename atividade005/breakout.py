@@ -1,4 +1,4 @@
-# breakout - one block per paddle hit, blocks solid after break
+# breakout
 
 # First test comment of the break code
 import math
