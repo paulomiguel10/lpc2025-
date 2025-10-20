@@ -11,6 +11,7 @@ GREEN = (0, 255, 0)
 ORANGE = (255, 75, 10)
 BLACK = (0, 0, 0)
 BROWN = (178, 59, 25)
+AMARELO = (255, 200, 50)
 GAME_WIDTH, GAME_HEIGHT = 256, 192
 SCALE_FACTOR = 4
 WINDOW_WIDTH = GAME_WIDTH * SCALE_FACTOR
@@ -130,46 +131,28 @@ player2 = player(
     key_right=pygame.K_d,
     image_path=("atividade007\\tank\\tanque.png"))
 
-def create_combat_walls(window_width, window_height, top_margin=48, wall_thickness=16):
-    """
-    Cria paredes no estilo do mapa Combat.
-    
-    :param window_width: largura da tela
-    :param window_height: altura da tela
-    :param top_margin: espaço no topo para o placar
-    :param wall_thickness: espessura das paredes
-    :return: lista de pygame.Rect representando as paredes
-    """
-    walls = []
+def criar_paredes_mapa_combat():
+    paredes = []
+    parede1 = pygame.Rect(0, 90, 1024, 32)
+    parede2 = pygame.Rect(0, 736, 1024, 32)
+    parede3 = pygame.Rect(0, 90, 32, 678)
+    parede4 = pygame.Rect(992, 90, 32, 678)
+    parede5 = pygame.Rect(320, 406, 96, 50)
+    parede6 = pygame.Rect(608, 406, 96, 50)
+    parede7 = pygame.Rect(486, 525, 50, 96)
+    parede8 = pygame.Rect(486, 240, 50, 96)
+    paredes.append(parede1)
+    paredes.append(parede2)
+    paredes.append(parede3)
+    paredes.append(parede4)
+    paredes.append(parede5)
+    paredes.append(parede6)
+    paredes.append(parede7)
+    paredes.append(parede8)
+    return paredes
 
-    # 1️⃣ Contorno da arena
-    walls.append(pygame.Rect(0, top_margin, window_width, wall_thickness))  # topo
-    walls.append(pygame.Rect(0, window_height - wall_thickness, window_width, wall_thickness))  # base
-    walls.append(pygame.Rect(0, top_margin, wall_thickness, window_height - top_margin))  # esquerda
-    walls.append(pygame.Rect(window_width - wall_thickness, top_margin, wall_thickness, window_height - top_margin))  # direita
+paredes = criar_paredes_mapa_combat()
 
-    # 2️⃣ Duas paredes em C (nos cantos)
-    # C esquerdo superior
-    walls.append(pygame.Rect(wall_thickness * 2, top_margin + wall_thickness * 2, wall_thickness * 3, wall_thickness))
-    walls.append(pygame.Rect(wall_thickness * 2, top_margin + wall_thickness * 2, wall_thickness, wall_thickness * 3))
-
-    # C direito inferior
-    walls.append(pygame.Rect(window_width - wall_thickness * 5, window_height - wall_thickness * 5, wall_thickness * 3, wall_thickness))
-    walls.append(pygame.Rect(window_width - wall_thickness * 3, window_height - wall_thickness * 5, wall_thickness, wall_thickness * 3))
-
-    # 3️⃣ Quatro paredes no centro
-    mid_x = window_width // 2
-    mid_y = (window_height + top_margin) // 2
-
-    walls.append(pygame.Rect(mid_x - wall_thickness*2, mid_y - wall_thickness*4, wall_thickness, wall_thickness*8))  # vertical esquerda
-    walls.append(pygame.Rect(mid_x + wall_thickness, mid_y - wall_thickness*4, wall_thickness, wall_thickness*8))  # vertical direita
-    walls.append(pygame.Rect(mid_x - wall_thickness*2, mid_y - wall_thickness*4, wall_thickness*3, wall_thickness))  # horizontal topo
-    walls.append(pygame.Rect(mid_x - wall_thickness*2, mid_y + wall_thickness*3, wall_thickness*3, wall_thickness))  # horizontal base
-
-    return walls
-
-# Cria as paredes
-walls = create_combat_walls(WINDOW_WIDTH, WINDOW_HEIGHT, top_margin=48, wall_thickness=16)
 
 # LOOP PRINCIPAL
 while running:
@@ -180,7 +163,7 @@ while running:
         # Movimentos e disparo dos players
         # Movimento e tiro do player 1
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_DOWN:
+            if event.key == pygame.K_DOWN:  # Player 1 atira
                 current_time = pygame.time.get_ticks()
                 if current_time - last_shot_time_1 >= shot_cooldown:
                     last_shot_time_1 = current_time  # atualiza o tempo do último tiro
@@ -210,6 +193,7 @@ while running:
                         "color": GREEN,
                         "owner": "player1"
                     })
+            # Movimento do player 1
             if event.key == pygame.K_UP:
                 player1.toggle_movement()
 
@@ -298,9 +282,8 @@ while running:
     score_text2 = font.render(f"{player2_score}", True, ORANGE)
     screen.blit(score_text2, (768, 20))
 
-    # No loop principal, desenha as paredes
-    for wall in walls:
-        pygame.draw.rect(screen, (139, 69, 19), wall)
-        
+    for parede in paredes:
+        pygame.draw.rect(screen, AMARELO, parede)    
+
     pygame.display.flip()
     clock.tick(60)
