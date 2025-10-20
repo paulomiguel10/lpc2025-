@@ -100,6 +100,10 @@ class player:
         if keys[self.key_right]:
             self.angle -= self.rotation_speed
 
+        # Atualiza imagem rotacionada e recalcula rect
+        self.image = pygame.transform.rotate(self.original_image, self.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
+
         # Move forward; image "top" is considered the front
         if self.moving:
             rad = math.radians(self.angle - 270)  # subtract to align
