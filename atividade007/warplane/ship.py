@@ -1,90 +1,27 @@
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from core.core import *
 import pygame
 import math
 import random
-from pathlib import Path
 
-pygame.init()
-pygame.mixer.init()
+#SHIP SPECIFIC SETTINGS
+shot_cooldown = 200      # time between shots 
+shot_lifetime = 350      # bullet lifespan 
+shot_size = 5            # bullet size
+shot_speed = 15          # bullet speed
+background_color = DARK_BLUE
+color_mode = "ship"
+walls = None  # no barriers 
 
-# CONSTANTS AND GLOBAL VARIABLES
-DARK_BLUE = (0, 0, 139)
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-ORANGE = (255, 75, 10)
-BLACK = (0, 0, 0)
-GAME_WIDTH, GAME_HEIGHT = 256, 192
-SCALE_FACTOR = 4
-WINDOW_WIDTH = GAME_WIDTH * SCALE_FACTOR
-WINDOW_HEIGHT = GAME_HEIGHT * SCALE_FACTOR
-screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-pygame.display.set_caption("Little Plane Comabat")
-clock = pygame.time.Clock()
-last_shot_time_1 = 0  # ms
-last_shot_time_2 = 0  # ms
-shot_cooldown = 200  # ms
-shot_lifetime = 350  # ms
-running = True  # main loop control
-shots = []  # list to store bullets
-shot_size = 5   # bullet size
-shot_speed = 15  # bullet speed (+ or - depending on direction)
-player1_health = 5
-player2_health = 5
-player1_score = 0
-player2_score = 0
-
-# SOUNDS SETUP
-BASE = Path(__file__).resolve().parent  # script folder
-sound_shot = pygame.mixer.Sound(str(BASE.parent / "core" / "shotsound.mp3"))
-sound_colision = pygame.mixer.Sound(
-    str(BASE.parent / "core" / "colision_sound.mp3")
-)
-# GAME FONT
-font = pygame.font.Font("atividade007\\core\\PressStart2P-Regular.ttf", 70)
-
-
-# PLAYER CLASS
-class player:
-    def __init__(self, x, y, key_left, key_right, image_path, ):
-        self.original_image = pygame.image.load(image_path).convert_alpha()
-        self.original_image = pygame.transform.scale_by(self.original_image, 5)
-        self.hit_time = None
-        self.image = self.original_image
-        self.rect = self.image.get_rect(center=(x, y))
-        self.angle = 0  # 0° pointing upward
-        self.rotation_speed = 3  # rotation speed
-        self.moving = False
-        self.key_left = key_left
-        self.key_right = key_right
-        self.image = pygame.transform.rotate(self.original_image, self.angle)
-        self.rect = self.image.get_rect(center=self.rect.center)
-
-        # CHANGE COLOR FOR PLAYER 1
-        if key_left == pygame.K_LEFT:  # identifies player 1
-            green_image = self.original_image.copy()
-            arr = pygame.surfarray.pixels3d(green_image)  # access all pixels
-            arr[:, :, 0] = 0  # R
-            arr[:, :, 1] = 255  # G
-            arr[:, :, 2] = 0  # B
-            del arr
-            self.original_image = green_image
-
-        # CHANGE COLOR FOR PLAYER 2
-        if key_left == pygame.K_a:  # identifies player 2
-            orange_image = self.original_image.copy()
-            arr = pygame.surfarray.pixels3d(orange_image)  # access all pixels
-            arr[:, :, 0] = 255  # R
-            arr[:, :, 1] = 75  # G
-            arr[:, :, 2] = 10  # B
-            del arr
-            self.original_image = orange_image
-
-    def toggle_movement(self):
-        self.moving = not self.moving  # toggle on/off
-
-    def update(self):
+# LAYER CLASS
+class ShipPlayer(Player):
+    def update(self, walls=None):
         keys = pygame.key.get_pressed()
 
-        # Rotate when hit and respawn in a random position
+        # Rotation and hit-time 
         if self.hit_time:
             if pygame.time.get_ticks() - self.hit_time < 500:
                 self.angle += 30
@@ -92,23 +29,24 @@ class player:
                 self.hit_time = None
                 self.rect.center = (
                     random.randint(0, WINDOW_WIDTH),
-                    random.randint(0, WINDOW_HEIGHT))
+                    random.randint(0, WINDOW_HEIGHT)
+                )
 
-        # Ship rotation
+        # Rotation
         if keys[self.key_left]:
             self.angle += self.rotation_speed
         if keys[self.key_right]:
             self.angle -= self.rotation_speed
 
-        # Atualiza imagem rotacionada e recalcula rect
+        # Update rotated image and hitbox
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
-        # Move forward; image "top" is considered the front
+        # Continuous movement
         if self.moving:
-            rad = math.radians(self.angle - 270)  # subtract to align
+            rad = math.radians(self.angle - 270)
             self.rect.x += math.cos(rad) * 6
-            self.rect.y -= math.sin(rad) * 6  # inverted for pygame coordinates
+            self.rect.y -= math.sin(rad) * 6
 
         # Screen wrap-around
         if self.rect.centerx < 0:
@@ -121,154 +59,33 @@ class player:
             self.rect.centery = 0
 
 
-# CREATING PLAYERS
-# player 1
-player1 = player(
+#PLAYER INSTANCES
+player1 = ShipPlayer(
     x=WINDOW_WIDTH // 5,
     y=WINDOW_HEIGHT // 5,
     key_left=pygame.K_LEFT,
     key_right=pygame.K_RIGHT,
-    image_path=("atividade007\\warplane\\aviao.png"))
+    image_path="atividade007/warplane/aviao.png",
+    toggle=True,
+    color_mode=color_mode
+)
 
-# player 2
-player2 = player(
+player2 = ShipPlayer(
     x=WINDOW_WIDTH * 4 // 5,
     y=WINDOW_HEIGHT * 4 // 5,
     key_left=pygame.K_a,
     key_right=pygame.K_d,
-    image_path=("atividade007\\warplane\\aviao.png"))
+    image_path="atividade007/warplane/aviao.png",
+    toggle=True,
+    color_mode=color_mode
+)
 
-# MAIN LOOP
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
 
-        # PLAYERS CONTROLS
-        if event.type == pygame.KEYDOWN:
-
-            # Player 1 movement and shooting
-            if event.key == pygame.K_DOWN:
-                sound_shot.play()
-                current_time = pygame.time.get_ticks()
-                if current_time - last_shot_time_1 >= shot_cooldown:
-                    last_shot_time_1 = current_time  # update last shot time
-                    # Convert angle to match ship movement
-                    rad = math.radians(player1.angle - 270)
-                    # distance from center to tip
-                    tip_offset = player1.original_image.get_height() / 2
-                    # Calculate ship tip coordinates when shooting
-                    tip_x = player1.rect.centerx + math.cos(rad) * tip_offset
-                    tip_y = player1.rect.centery - math.sin(rad) * tip_offset
-                    # Bullet direction: same vector used for ship movement
-                    shot_dx = math.cos(rad) * shot_speed
-                    shot_dy = -math.sin(rad) * shot_speed
-                    # Add bullet to list
-                    rect_x = int(tip_x - shot_size // 2)
-                    rect_y = int(tip_y - shot_size // 2)
-                    shots.append({
-                        "rect": pygame.Rect(
-                            rect_x, rect_y, shot_size, shot_size),
-                        "dx": shot_dx,
-                        "dy": shot_dy,
-                        "born_time": current_time,
-                        "color": GREEN,
-                        "owner": "player1"})
-            if event.key == pygame.K_UP:
-                player1.toggle_movement()
-
-            # Player 2 movement and shooting
-            if event.key == pygame.K_w:
-                player2.toggle_movement()
-            if event.key == pygame.K_s:  # Player 2 shoots
-                sound_shot.play()
-                current_time = pygame.time.get_ticks()
-                if current_time - last_shot_time_2 >= shot_cooldown:
-                    last_shot_time_2 = current_time  # update last shot time
-                    rad = math.radians(player2.angle - 270)
-                    tip_offset = player2.original_image.get_height() / 2
-                    tip_x = player2.rect.centerx + math.cos(rad) * tip_offset
-                    tip_y = player2.rect.centery - math.sin(rad) * tip_offset
-                    shot_dx = math.cos(rad) * shot_speed
-                    shot_dy = -math.sin(rad) * shot_speed
-                    rect_x = int(tip_x - shot_size // 2)
-                    rect_y = int(tip_y - shot_size // 2)
-                    shots.append({
-                        "rect": pygame.Rect(
-                            rect_x, rect_y, shot_size, shot_size),
-                        "dx": shot_dx,
-                        "dy": shot_dy,
-                        "born_time": current_time,
-                        "color": ORANGE,
-                        "owner": "player2"})
-
-    screen.fill(DARK_BLUE)
-    player1.update()
-    player2.update()
-
-    # BULLETS UPDATE AND DRAW
-    current_time = pygame.time.get_ticks()
-    for shot in shots[:]:
-
-        # Collision with player 1
-        if (shot["owner"] != "player1" and
-                shot["rect"].colliderect(player1.rect)):
-            sound_colision.play()
-            player1_health -= 1
-            player2_score += 1
-            player1.hit_time = pygame.time.get_ticks()  # activate rotation
-            shots.remove(shot)
-            continue
-
-        # Collision with player 2
-        if (
-            shot["owner"] != "player2"
-            and shot["rect"].colliderect(player2.rect)
-        ):
-            sound_colision.play()
-            player2_health -= 1
-            player2.hit_time = pygame.time.get_ticks()  # activate rotation
-            player1_score += 1
-            shots.remove(shot)
-            continue
-        shot["rect"].x += shot["dx"]
-        shot["rect"].y += shot["dy"]
-        pygame.draw.rect(screen, (shot["color"]), shot["rect"])
-        # Screen wrap-around for bullets
-        if shot["rect"].top < 0:
-            shot["rect"].bottom = WINDOW_HEIGHT
-        elif shot["rect"].bottom > WINDOW_HEIGHT:
-            shot["rect"].top = 0
-        if shot["rect"].left < 0:
-            shot["rect"].right = WINDOW_WIDTH
-        elif shot["rect"].right > WINDOW_WIDTH:
-            shot["rect"].left = 0
-        if current_time - shot["born_time"] >= shot_lifetime:
-            shots.remove(shot)
-
-    # Draw players
-    screen.blit(player1.image, player1.rect)
-    screen.blit(player2.image, player2.rect)
-    # Player 1 score
-    score_text1 = font.render(f"{player1_score}", True, GREEN)
-    screen.blit(score_text1, (256, 20))
-    # Player 2 score
-    score_text2 = font.render(f"{player2_score}", True, ORANGE)
-    screen.blit(score_text2, (768, 20))
-    # Player 1 WINS
-    score_win1 = font.render("Player 1 Wins", True, GREEN)
-    if player1_score >= 3:
-        screen.fill(DARK_BLUE)
-        screen.blit(score_win1, (66, 100))
-    # Player 2 WINS
-    score_win2 = font.render("Player 2 Wins", True, ORANGE)
-    if player2_score >= 3:
-        screen.fill(DARK_BLUE)
-        screen.blit(score_win2, (66, 100))
-    # Draw clouds on screen
+#CLOUD DRAWING FUNCTION 
+def draw_pixel_clouds():
     cloud_color = (100, 170, 255)
 
-    def draw_pixel_cloud(x, y, scale=12):
+    def draw_pixel_cloud(x, y, scale=25):
         pattern = [
             "    XXXX    ",
             "  XXXXXXXX  ",
@@ -289,8 +106,138 @@ while running:
                         scale
                     )
                     pygame.draw.rect(screen, cloud_color, rect)
+
     draw_pixel_cloud(150, 300, 25)
     draw_pixel_cloud(600, 300, 25)
 
-    pygame.display.flip()
-    clock.tick(60)
+
+#MAIN LOOP 
+def ship_loop():
+    last_shot_time_1 = 0
+    last_shot_time_2 = 0
+    running = True
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            #PLAYER 1 CONTROLS
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:  # toggle movement
+                    player1.toggle_movement()
+                if event.key == pygame.K_DOWN:  # shoot
+                    now = pygame.time.get_ticks()
+                    if now - last_shot_time_1 >= shot_cooldown:
+                        sound_shot.play()
+                        last_shot_time_1 = now
+                        rad = math.radians(player1.angle - 270)
+                        tip_x = player1.rect.centerx + math.cos(rad) * 25
+                        tip_y = player1.rect.centery - math.sin(rad) * 25
+                        shots.append({
+                            "rect": pygame.Rect(tip_x, tip_y, shot_size, shot_size),
+                            "dx": math.cos(rad) * shot_speed,
+                            "dy": -math.sin(rad) * shot_speed,
+                            "born": now,
+                            "color": GREEN,
+                            "owner": "p1"
+                        })
+
+                #PLAYER 2 CONTROLS 
+                if event.key == pygame.K_w:  # toggle movement
+                    player2.toggle_movement()
+                if event.key == pygame.K_s:  # shoot
+                    now = pygame.time.get_ticks()
+                    if now - last_shot_time_2 >= shot_cooldown:
+                        sound_shot.play()
+                        last_shot_time_2 = now
+                        rad = math.radians(player2.angle - 270)
+                        tip_x = player2.rect.centerx + math.cos(rad) * 25
+                        tip_y = player2.rect.centery - math.sin(rad) * 25
+                        shots.append({
+                            "rect": pygame.Rect(tip_x, tip_y, shot_size, shot_size),
+                            "dx": math.cos(rad) * shot_speed,
+                            "dy": -math.sin(rad) * shot_speed,
+                            "born": now,
+                            "color": ORANGE,
+                            "owner": "p2"
+                        })
+
+        #UPDATE 
+        player1.update()
+        player2.update()
+
+        #BULLETS
+        current_time = pygame.time.get_ticks()
+        for shot in shots[:]:
+            shot["rect"].x += shot["dx"]
+            shot["rect"].y += shot["dy"]
+
+            # Bullet wrap-around
+            if shot["rect"].top < 0:
+                shot["rect"].bottom = WINDOW_HEIGHT
+            elif shot["rect"].bottom > WINDOW_HEIGHT:
+                shot["rect"].top = 0
+            if shot["rect"].left < 0:
+                shot["rect"].right = WINDOW_WIDTH
+            elif shot["rect"].right > WINDOW_WIDTH:
+                shot["rect"].left = 0
+
+            # Collisions
+            if shot["owner"] == "p1" and shot["rect"].colliderect(player2.rect):
+                sound_collision.play()
+                player1.score += 1
+                player2.hit_time = pygame.time.get_ticks()
+                shots.remove(shot)
+                continue
+            elif shot["owner"] == "p2" and shot["rect"].colliderect(player1.rect):
+                sound_collision.play()
+                player2.score += 1
+                player1.hit_time = pygame.time.get_ticks()
+                shots.remove(shot)
+                continue
+
+            # Remove expired bullets
+            if current_time - shot["born"] > shot_lifetime:
+                shots.remove(shot)
+
+        #DRAW 
+        screen.fill(background_color)
+        for shot in shots:
+            pygame.draw.rect(screen, shot["color"], shot["rect"])
+        screen.blit(player1.image, player1.rect)
+        screen.blit(player2.image, player2.rect)
+        draw_pixel_clouds()
+
+        # Scoreboard
+        s1 = font.render(str(player1.score), True, GREEN)
+        s2 = font.render(str(player2.score), True, ORANGE)
+        screen.blit(s1, (256, 20))
+        screen.blit(s2, (768, 20))
+
+        # Check victory
+        if player1.score >= 3:
+            screen.fill(background_color)
+            win = font.render("Player 1 Wins", True, GREEN)
+            win_rect = win.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+            screen.blit(win, win_rect)
+            pygame.display.flip()
+            pygame.time.wait(3000)
+            running = False
+            continue
+        elif player2.score >= 3:
+            screen.fill(background_color)
+            win = font.render("Player 2 Wins", True, ORANGE)
+            win_rect = win.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+            screen.blit(win, win_rect)
+            pygame.display.flip()
+            pygame.time.wait(3000)
+            running = False
+            continue
+
+        pygame.display.flip()
+        clock.tick(60)
+
+
+# START GAME
+ship_loop()
