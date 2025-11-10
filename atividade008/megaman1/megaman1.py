@@ -45,8 +45,9 @@ class Megaman(pygame.sprite.Sprite):
         ]
         #Sprite de pular atirando
         self.sprites_atirarpulando = [
-            pygame.image.load('atividade008/sprites/atira_1.png')git a
+            pygame.image.load('atividade008/sprites/pularatirando.png')
         ]
+
         #Define a animação inicial
         self.sprites = self.sprites_andar
 
@@ -75,7 +76,7 @@ class Megaman(pygame.sprite.Sprite):
         self.sprites = self.sprites_atirarparado
         self.image = self.sprites[0] 
         self.image = pygame.transform.scale(self.image, (499/4.6, 500/4.6))
-
+        
         if self.direcao == 1:
             self.image = pygame.transform.flip(self.image, True, False)
     
