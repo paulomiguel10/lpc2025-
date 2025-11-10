@@ -1,16 +1,30 @@
 import pygame
 import sys
+from pathlib import Path
 
-# Inicialização
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+# Initialization
 pygame.init()
+pygame.mixer.init()
 
-# Configurações da tela
+# === SOUNDS ===
+BASE = Path(__file__).resolve().parent
+sound_shot = pygame.mixer.Sound("atividade008/megaman1/sounds/tiro.wav")
+sound_jump = pygame.mixer.Sound("atividade008/megaman1/sounds/jump.wav")
+
+# Background music
+pygame.mixer.music.load("atividade008/megaman1/sounds/soundtrack.mp3")  # music file path
+pygame.mixer.music.set_volume(0.4)  # volume from 0.0 to 1.0
+pygame.mixer.music.play(-1)  # -1 means infinite loop
+
+#SCREEN SETTINGS 
 screen_size = (850, 720)
 screen = pygame.display.set_mode(screen_size)
 pygame.display.set_caption("Sprites")
 
-#Fundo de tela
-background = pygame.image.load('atividade008/sprites/fundo.png')
+#BACKGROUND 
+background = pygame.image.load('atividade008/megaman1/sprites/fundo.png')
 background = pygame.transform.scale(background, screen_size)
 
 class Megaman(pygame.sprite.Sprite):
@@ -18,205 +32,211 @@ class Megaman(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.sprites = []
 
-        #Sprites de andar
-        self.sprites_andar = [
-            pygame.image.load('atividade008/sprites/andar_1.png'),
-            pygame.image.load('atividade008/sprites/andar_2.png'),
-            pygame.image.load('atividade008/sprites/andar_3.png')
-        ]
-        #Sprite ficar parado
-        self.sprites_parado = [
-            pygame.image.load('atividade008/sprites/parado_1.png')
+        # Walking sprites
+        self.sprites_walk = [
+            pygame.image.load('atividade008/megaman1/sprites/andar1.png'),
+            pygame.image.load('atividade008/megaman1/sprites/andar2.png'),
+            pygame.image.load('atividade008/megaman1/sprites/andar3.png')
         ]
 
-        #Sprite de pular
-        self.sprites_pular = [
-            (pygame.image.load('atividade008/sprites/pulo.png'))
-                             ]
-        #Sprite de atirar parado
-        self.sprites_atirarparado = [
-          (pygame.image.load('atividade008/sprites/parado_atira.png'))
-        ]
-        #Sprite de atirar correndo 
-        self.sprites_atirarcorrendo = [
-            pygame.image.load('atividade008/sprites/atira_1.png'),
-            pygame.image.load('atividade008/sprites/atira_2.png'),
-            pygame.image.load('atividade008/sprites/atira_3.png')
-        ]
-        #Sprite de pular atirando
-        self.sprites_atirarpulando = [
-            pygame.image.load('atividade008/sprites/pularatirando.png')
+        # Idle sprite
+        self.sprites_idle = [
+            pygame.image.load('atividade008/megaman1/sprites/parado_1.png')
         ]
 
-        #Define a animação inicial
-        self.sprites = self.sprites_andar
+        # Jumping sprite
+        self.sprites_jump = [
+            pygame.image.load('atividade008/megaman1/sprites/pulo.png')
+        ]
 
-        self.atual = 0
-        self.velocidade = 8 #velocidade de movimento|
-        self.direcao = 1 #direita: 1 esquerda: -1
-        self.image = self.sprites[self.atual]
+        # Shooting while standing
+        self.sprites_shoot_idle = [
+            pygame.image.load('atividade008/megaman1/sprites/parado_atira.png')
+        ]
+
+        # Shooting while running
+        self.sprites_shoot_running = [
+            pygame.image.load('atividade008/megaman1/sprites/atira_1.png'),
+            pygame.image.load('atividade008/megaman1/sprites/atira_2.png'),
+            pygame.image.load('atividade008/megaman1/sprites/atira_3.png')
+        ]
+
+        # Shooting while jumping
+        self.sprites_shoot_jumping = [
+            pygame.image.load('atividade008/megaman1/sprites/pularatirando.png')
+        ]
+
+        # Initial animation
+        self.sprites = self.sprites_walk
+
+        self.current_frame = 0
+        self.speed = 8  # movement speed
+        self.direction = 1  # right: 1  left: -1
+        self.image = self.sprites[self.current_frame]
         self.image = pygame.transform.scale(self.image, (499/5, 500/5))
 
         self.rect = self.image.get_rect()
-        self.rect.topleft = 200,530
-        self.animar = False
+        self.rect.topleft = 200, 530
+        self.animate = False
     
-    def pular(self):
-        if self.rect.y == 530 and (not hasattr(self, "velocidade_y") or self.velocidade_y == 0):
-
-            self.animar = True
-            self.sprites = self.sprites_pular
+    def jump(self):
+        if self.rect.y == 530 and (not hasattr(self, "velocity_y") or self.velocity_y == 0):
+            sound_jump.play()
+            self.animate = True
+            self.sprites = self.sprites_jump
             self.image = self.sprites[0]
             self.image = pygame.transform.scale(self.image, (499/5, 500/5))
-            self.velocidade_y = -17
+            self.velocity_y = -17
 
-    def atirarparado(self):
-        self.animar = True
-        self.atual = 0
-        self.sprites = self.sprites_atirarparado
+    def shoot_idle(self):
+        self.animate = True
+        self.current_frame = 0
+        self.sprites = self.sprites_shoot_idle
         self.image = self.sprites[0] 
         self.image = pygame.transform.scale(self.image, (499/4.6, 500/4.6))
         
-        if self.direcao == 1:
+        if self.direction == 1:
             self.image = pygame.transform.flip(self.image, True, False)
     
-    def atirarcorrendo(self):
-        self.animar = True
-        self.atual = 0
-        self.sprites = self.sprites_atirarcorrendo
+    def shoot_running(self):
+        self.animate = True
+        self.current_frame = 0
+        self.sprites = self.sprites_shoot_running
 
-    def andar(self, direcao):
-      self.animar = True
-      self.direcao = direcao
-      self.sprites = self.sprites_andar
-  
-    def parar(self):
-        self.animar = False
-        self.atual = 0
-        self.sprites = self.sprites_parado
+    def walk(self, direction):
+        self.animate = True
+        self.direction = direction
+        self.sprites = self.sprites_walk
+
+    def stop(self):
+        self.animate = False
+        self.current_frame = 0
+        self.sprites = self.sprites_idle
         self.image = self.sprites[0]
         self.image = pygame.transform.scale(self.image, (499/5, 500/5))
 
-        if self.direcao == 1:
+        if self.direction == 1:
             self.image = pygame.transform.flip(self.image, True, False)
 
     def update(self):
-        if self. animar == True:
-            self.atual = self.atual + 0.2
-            if self.atual >= len(self.sprites):
-                self.atual = 0
-            self.image = self.sprites[int(self.atual)]
+        if self.animate:
+            self.current_frame += 0.2
+            if self.current_frame >= len(self.sprites):
+                self.current_frame = 0
+            self.image = self.sprites[int(self.current_frame)]
             self.image = pygame.transform.scale(self.image, (499/5, 500/5))
-            #Inverte imagem se estiver indo para esquerda
-            if self.direcao == 1:
+
+            # Flip image if facing right
+            if self.direction == 1:
                 self.image = pygame.transform.flip(self.image, True, False)
   
-        if hasattr(self, "velocidade_y"):
-            self.rect.y += self.velocidade_y
-            self.velocidade_y += 1
+        if hasattr(self, "velocity_y"):
+            self.rect.y += self.velocity_y
+            self.velocity_y += 1
 
             if self.rect.y >= 530:
                 self.rect.y = 530
-                self.velocidade_y = 0
+                self.velocity_y = 0
             else:
-                self.sprites = self.sprites_pular
+                self.sprites = self.sprites_jump
                 self.image = self.sprites[0]
                 self.image = pygame.transform.scale(self.image, (499/5, 500/5))
-                if self.direcao == 1:
-                  self.image = pygame.transform.flip(self.image, True, False)
+                if self.direction == 1:
+                    self.image = pygame.transform.flip(self.image, True, False)
 
-class Tiro(pygame.sprite.Sprite):
-    def __init__(self, x, y, direcao):
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, x, y, direction):
         pygame.sprite.Sprite.__init__(self)
-        self.sprites_tiro = [pygame.image.load('atividade008/sprites/tiro.png')]
-        self.image = self.sprites_tiro[0]
+        self.sprites_bullet = [pygame.image.load('atividade008/megaman1/sprites/tiro.png')]
+        self.image = self.sprites_bullet[0]
         self.image = pygame.transform.scale(self.image, (30, 15))
-        # tamanho do tiro
+        # bullet size
 
-        # Inverter caso esteja virado para a direita (1)
-        if direcao == 1:
+        # Flip if facing right (1)
+        if direction == 1:
             self.image = pygame.transform.flip(self.image, True, False)
 
-        # Posição e direção
+        # Position and direction
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
-        self.direcao = direcao
-        self.velocidade = 15 * direcao
+        self.direction = direction
+        self.speed = 15 * direction
 
     def update(self):
-        self.rect.x += self.velocidade
+        self.rect.x += self.speed
         if self.rect.x < 0 or self.rect.x > 850:
             self.kill()
 
-#Criação do sprite
-todas_as_sprites = pygame.sprite.Group()
+#SPRITE CREATION
+all_sprites = pygame.sprite.Group()
 megaman = Megaman()
-tiros = pygame.sprite.Group()
-todas_as_sprites.add(megaman)
+bullets = pygame.sprite.Group()
+all_sprites.add(megaman)
 
-relogio = pygame.time.Clock()
+clock = pygame.time.Clock()
 
-# LOOP PRINCIPAL
+#MAIN LOOP 
 running = True
 while running:
-    relogio.tick(30)
+    clock.tick(30)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False 
         
-        # Cria tiro ao apertar S
+        # Create bullet when pressing S
         if event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-            if megaman.direcao == 1:
-                x_tiro = megaman.rect.right - 10
+            sound_shot.play()
+            if megaman.direction == 1:
+                bullet_x = megaman.rect.right - 10
             else:
-                x_tiro = megaman.rect.left + 10
+                bullet_x = megaman.rect.left + 10
 
-            y_tiro = megaman.rect.centery - 5
-            tiro = Tiro(x_tiro, y_tiro, megaman.direcao)
-            todas_as_sprites.add(tiro)
-            tiros.add(tiro)
+            bullet_y = megaman.rect.centery - 0.5
+            bullet = Bullet(bullet_x, bullet_y, megaman.direction)
+            all_sprites.add(bullet)
+            bullets.add(bullet)
 
     keys = pygame.key.get_pressed()
-    movendo = False
+    moving = False
 
-    # Movimento para a direita
+    # Move right
     if keys[pygame.K_RIGHT]:
-        megaman.rect.x += megaman.velocidade
-        megaman.direcao = 1
+        megaman.rect.x += megaman.speed
+        megaman.direction = 1
         if keys[pygame.K_s]:
-            megaman.atirarcorrendo()
+            megaman.shoot_running()
         else:
-            megaman.andar(1)
-        movendo = True
+            megaman.walk(1)
+        moving = True
 
-    # Movimento para a esquerda
+    # Move left
     elif keys[pygame.K_LEFT]:
-        megaman.rect.x -= megaman.velocidade
-        megaman.direcao = -1
+        megaman.rect.x -= megaman.speed
+        megaman.direction = -1
         if keys[pygame.K_s]:
-            megaman.atirarcorrendo()
-            movendo = True
+            megaman.shoot_running()
+            moving = True
         else:
-            megaman.andar(-1)    
-        movendo = True
+            megaman.walk(-1)    
+        moving = True
 
-    # Atirar parado (animação)
+    # Shoot idle animation
     if keys[pygame.K_s] and megaman.rect.y == 530 and not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
-        megaman.atirarparado()
-        movendo = True
+        megaman.shoot_idle()
+        moving = True
 
-    # Pular
+    # Jump
     elif keys[pygame.K_SPACE]:
-        megaman.pular()
-        movendo = True
+        megaman.jump()
+        moving = True
         
-    # Parado
-    if not movendo:
-        megaman.parar()
+    # Idle
+    if not moving:
+        megaman.stop()
 
-    # Atualização de tela
+    # === SCREEN UPDATE ===
     screen.blit(background, (0,0))
-    todas_as_sprites.update()
-    todas_as_sprites.draw(screen)
+    all_sprites.update()
+    all_sprites.draw(screen)
     pygame.display.flip()
