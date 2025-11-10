@@ -8,24 +8,26 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 pygame.init()
 pygame.mixer.init()
 
-# === SOUNDS ===
+# SOUNDS
 BASE = Path(__file__).resolve().parent
 sound_shot = pygame.mixer.Sound("atividade008/megaman1/sounds/tiro.wav")
 sound_jump = pygame.mixer.Sound("atividade008/megaman1/sounds/jump.wav")
 
 # Background music
-pygame.mixer.music.load("atividade008/megaman1/sounds/soundtrack.mp3")  # music file path
+# music file path
+pygame.mixer.music.load("atividade008/megaman1/sounds/soundtrack.mp3")
 pygame.mixer.music.set_volume(0.4)  # volume from 0.0 to 1.0
 pygame.mixer.music.play(-1)  # -1 means infinite loop
 
-#SCREEN SETTINGS 
+# SCREEN SETTINGS
 screen_size = (850, 720)
 screen = pygame.display.set_mode(screen_size)
 pygame.display.set_caption("Sprites")
 
-#BACKGROUND 
+# BACKGROUND
 background = pygame.image.load('atividade008/megaman1/sprites/fundo.png')
 background = pygame.transform.scale(background, screen_size)
+
 
 class Megaman(pygame.sprite.Sprite):
     def __init__(self):
@@ -63,7 +65,9 @@ class Megaman(pygame.sprite.Sprite):
 
         # Shooting while jumping
         self.sprites_shoot_jumping = [
-            pygame.image.load('atividade008/megaman1/sprites/pularatirando.png')
+            pygame.image.load(
+                'atividade008/megaman1/sprites/pularatirando.png'
+            )
         ]
 
         # Initial animation
@@ -78,9 +82,12 @@ class Megaman(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.topleft = 200, 530
         self.animate = False
-    
+
     def jump(self):
-        if self.rect.y == 530 and (not hasattr(self, "velocity_y") or self.velocity_y == 0):
+        if (
+            self.rect.y == 530 and
+            (not hasattr(self, "velocity_y") or self.velocity_y == 0)
+        ):
             sound_jump.play()
             self.animate = True
             self.sprites = self.sprites_jump
@@ -92,12 +99,12 @@ class Megaman(pygame.sprite.Sprite):
         self.animate = True
         self.current_frame = 0
         self.sprites = self.sprites_shoot_idle
-        self.image = self.sprites[0] 
+        self.image = self.sprites[0]
         self.image = pygame.transform.scale(self.image, (499/4.6, 500/4.6))
-        
+
         if self.direction == 1:
             self.image = pygame.transform.flip(self.image, True, False)
-    
+
     def shoot_running(self):
         self.animate = True
         self.current_frame = 0
@@ -129,7 +136,7 @@ class Megaman(pygame.sprite.Sprite):
             # Flip image if facing right
             if self.direction == 1:
                 self.image = pygame.transform.flip(self.image, True, False)
-  
+
         if hasattr(self, "velocity_y"):
             self.rect.y += self.velocity_y
             self.velocity_y += 1
@@ -144,10 +151,12 @@ class Megaman(pygame.sprite.Sprite):
                 if self.direction == 1:
                     self.image = pygame.transform.flip(self.image, True, False)
 
+
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, direction):
         pygame.sprite.Sprite.__init__(self)
-        self.sprites_bullet = [pygame.image.load('atividade008/megaman1/sprites/tiro.png')]
+        bullet_sprite_path = 'atividade008/megaman1/sprites/tiro.png'
+        self.sprites_bullet = [pygame.image.load(bullet_sprite_path)]
         self.image = self.sprites_bullet[0]
         self.image = pygame.transform.scale(self.image, (30, 15))
         # bullet size
@@ -167,7 +176,8 @@ class Bullet(pygame.sprite.Sprite):
         if self.rect.x < 0 or self.rect.x > 850:
             self.kill()
 
-#SPRITE CREATION
+
+# SPRITE CREATION
 all_sprites = pygame.sprite.Group()
 megaman = Megaman()
 bullets = pygame.sprite.Group()
@@ -175,15 +185,15 @@ all_sprites.add(megaman)
 
 clock = pygame.time.Clock()
 
-#MAIN LOOP 
+# MAIN LOOP
 running = True
 while running:
     clock.tick(30)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False 
-        
+            running = False
+
         # Create bullet when pressing S
         if event.type == pygame.KEYDOWN and event.key == pygame.K_s:
             sound_shot.play()
@@ -218,11 +228,15 @@ while running:
             megaman.shoot_running()
             moving = True
         else:
-            megaman.walk(-1)    
+            megaman.walk(-1)
         moving = True
 
     # Shoot idle animation
-    if keys[pygame.K_s] and megaman.rect.y == 530 and not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
+    if (
+        keys[pygame.K_s]
+        and megaman.rect.y == 530
+        and not (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT])
+    ):
         megaman.shoot_idle()
         moving = True
 
@@ -230,13 +244,13 @@ while running:
     elif keys[pygame.K_SPACE]:
         megaman.jump()
         moving = True
-        
+
     # Idle
     if not moving:
         megaman.stop()
 
-    # === SCREEN UPDATE ===
-    screen.blit(background, (0,0))
+    # SCREEN UPDATE
+    screen.blit(background, (0, 0))
     all_sprites.update()
     all_sprites.draw(screen)
     pygame.display.flip()
