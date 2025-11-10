@@ -43,6 +43,10 @@ class Megaman(pygame.sprite.Sprite):
             pygame.image.load('atividade008/sprites/atira_2.png'),
             pygame.image.load('atividade008/sprites/atira_3.png')
         ]
+        #Sprite de pular atirando
+        self.sprites_atirarpulando = [
+            pygame.image.load('atividade008/sprites/atira_1.png')git a
+        ]
         #Define a animação inicial
         self.sprites = self.sprites_andar
 
