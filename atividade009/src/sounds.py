@@ -10,4 +10,7 @@ pygame.mixer.init()
 BASE = Path(__file__).resolve().parent
 sound_shot = pygame.mixer.Sound("atividade009/sounds/fire.wav")
 break_asteroid = pygame.mixer.Sound("atividade009/sounds/bangMedium.wav")
-ufo_sound = pygame.mixer.Sound("atividade009/sounds/saucerSmall.wav")
+ufo_sound = pygame.mixer.Sound("atividade009/sounds/ufo_sound.mp3")
+sound_track = pygame.mixer.Sound("atividade009/sounds/beat1.wav")
+
+

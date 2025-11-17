@@ -7,6 +7,9 @@ from sounds import sound_shot
 import config as C
 from utils import Vec, angle_to_vec, draw_circle, draw_poly, wrap_pos
 
+pg.mixer.music.load("atividade009/sounds/beat1.wav")
+pg.mixer.music.set_volume(0.4)  # volume from 0.0 to 1.0
+pg.mixer.music.play(-1)  # -1 means infinite loop
 
 class Bullet(pg.sprite.Sprite):
     def __init__(self, pos: Vec, vel: Vec):
