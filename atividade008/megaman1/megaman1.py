@@ -28,7 +28,6 @@ pygame.display.set_caption("Sprites")
 background = pygame.image.load('atividade008/megaman1/sprites/fundo.png')
 background = pygame.transform.scale(background, screen_size)
 
-
 class Megaman(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)

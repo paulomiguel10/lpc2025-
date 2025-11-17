@@ -3,7 +3,7 @@ import math
 from random import uniform
 
 import pygame as pg
-
+from sounds import break_asteroid
 import config as C
 from sprites import Asteroid, Ship, UFO
 from utils import Vec, rand_edge_pos, rand_unit_vec
@@ -113,6 +113,7 @@ class World:
                     b.kill()
 
     def split_asteroid(self, ast: Asteroid):
+        break_asteroid.play()
         self.score += C.AST_SIZES[ast.size]["score"]
         split = C.AST_SIZES[ast.size]["split"]
         pos = Vec(ast.pos)

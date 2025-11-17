@@ -1,9 +1,9 @@
 
 import math
 from random import uniform
-
+from sounds import ufo_sound
 import pygame as pg
-
+from sounds import sound_shot
 import config as C
 from utils import Vec, angle_to_vec, draw_circle, draw_poly, wrap_pos
 
@@ -85,6 +85,7 @@ class Ship(pg.sprite.Sprite):
     def fire(self) -> Bullet | None:
         if self.cool > 0:
             return None
+        sound_shot.play()
         dirv = angle_to_vec(self.angle)
         pos = self.pos + dirv * (self.r + 6)
         vel = self.vel + dirv * C.SHIP_BULLET_SPEED
@@ -128,6 +129,7 @@ class UFO(pg.sprite.Sprite):
         self.dir = Vec(1, 0) if uniform(0, 1) < 0.5 else Vec(-1, 0)
 
     def update(self, dt: float):
+        ufo_sound.play()
         self.pos += self.dir * self.speed * dt
         self.pos = wrap_pos(self.pos)
         self.rect.center = self.pos
