@@ -11,14 +11,16 @@ pg.mixer.music.load("atividade009/sounds/beat1.wav")
 pg.mixer.music.set_volume(0.4)  # volume from 0.0 to 1.0
 pg.mixer.music.play(-1)  # -1 means infinite loop
 
+
 class Bullet(pg.sprite.Sprite):
-    def __init__(self, pos: Vec, vel: Vec):
+    def __init__(self, pos: Vec, vel: Vec, owner: str = "ship"):
         super().__init__()
         self.pos = Vec(pos)
         self.vel = Vec(vel)
         self.ttl = C.BULLET_TTL
         self.r = C.BULLET_RADIUS
         self.rect = pg.Rect(0, 0, self.r * 2, self.r * 2)
+        self.owner = owner
 
     def update(self, dt: float):
         self.pos += self.vel * dt
@@ -65,6 +67,8 @@ class Asteroid(pg.sprite.Sprite):
 
 
 class Ship(pg.sprite.Sprite):
+    instance = None
+
     def __init__(self, pos: Vec):
         super().__init__()
         self.pos = Vec(pos)
@@ -75,6 +79,7 @@ class Ship(pg.sprite.Sprite):
         self.alive = True
         self.r = C.SHIP_RADIUS
         self.rect = pg.Rect(0, 0, self.r * 2, self.r * 2)
+        Ship.instance = self
 
     def control(self, keys: pg.key.ScancodeWrapper, dt: float):
         if keys[pg.K_LEFT]:
@@ -130,9 +135,58 @@ class UFO(pg.sprite.Sprite):
         self.speed = C.UFO_SPEED
         self.rect = pg.Rect(0, 0, self.r * 2, self.r * 2)
         self.dir = Vec(1, 0) if uniform(0, 1) < 0.5 else Vec(-1, 0)
+        self.turn_rate = 2.5
+        self.fire_cool = uniform(1.0, 2.5)
+        self.world = None
 
     def update(self, dt: float):
         ufo_sound.play()
+        # Seguir o player se for UFO pequeno
+        if self.small and Ship.instance is not None:
+            desired = Vec(Ship.instance.pos) - self.pos
+            if desired.length_squared() > 0:
+                desired = desired.normalize()
+
+                current_angle = math.atan2(self.dir.y, self.dir.x)
+                desired_angle = math.atan2(desired.y, desired.x)
+                angle_diff = (desired_angle - current_angle +
+                              math.pi) % (2 * math.pi) - math.pi
+
+                max_step = self.turn_rate * dt
+                if angle_diff > max_step:
+                    angle_diff = max_step
+                elif angle_diff < -max_step:
+                    angle_diff = -max_step
+
+                new_angle = current_angle + angle_diff
+                self.dir = Vec(math.cos(new_angle), math.sin(new_angle))
+
+        # Tiro do UFO pequeno
+        self.fire_cool -= dt
+        if (self.small and Ship.instance is not None
+                and self.world is not None
+                and self.fire_cool <= 0):
+            to_ship = Vec(Ship.instance.pos) - self.pos
+            if to_ship.length_squared() > 0:
+                dirv = to_ship.normalize()
+
+                # usa o "aim" da config para imprecisão
+                aim = C.UFO_SMALL["aim"]
+                max_spread = math.radians(30)
+                spread = (1.0 - aim) * max_spread
+                jitter = uniform(-spread, spread)
+                base_angle = math.atan2(dirv.y, dirv.x)
+                shot_angle = base_angle + jitter
+                shot_dir = Vec(math.cos(shot_angle), math.sin(shot_angle))
+
+                bullet_pos = self.pos + shot_dir * (self.r + 4)
+                bullet_vel = shot_dir * C.SHIP_BULLET_SPEED
+                b = Bullet(bullet_pos, bullet_vel, owner="ufo")
+                self.world.bullets.add(b)
+                self.world.all_sprites.add(b)
+                self.fire_cool = uniform(0.3, 0.6)
+
+        # Movimento
         self.pos += self.dir * self.speed * dt
         self.pos = wrap_pos(self.pos)
         self.rect.center = self.pos

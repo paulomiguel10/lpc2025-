@@ -46,6 +46,7 @@ class World:
         y = uniform(0, C.HEIGHT)
         x = 0 if uniform(0, 1) < 0.5 else C.WIDTH
         ufo = UFO(Vec(x, y), small)
+        ufo.world = self    # ADIÇÂO: referência ao mundo
         self.ufos.add(ufo)
         self.all_sprites.add(ufo)
 
@@ -103,8 +104,21 @@ class World:
                     self.ship_die()
                     break
 
+            # ADIÇÂO:
+            # Balas dos UFOs acertando a nave
+            for b in list(self.bullets):
+                if getattr(b, "owner", "ship") == "ufo":
+                    if (b.pos - self.ship.pos).length() < (b.r + self.ship.r):
+                        self.ship_die()
+                        b.kill()
+                        break
+            # FIM DA ADIÇÂO
+
         for ufo in list(self.ufos):
             for b in list(self.bullets):
+                # ADIÇÂO: só balas da nave
+                if getattr(b, "owner", "ship") != "ship":
+                    continue
                 if (ufo.pos - b.pos).length() < (ufo.r + b.r):
                     score = (C.UFO_SMALL["score"] if ufo.small
                              else C.UFO_BIG["score"])
