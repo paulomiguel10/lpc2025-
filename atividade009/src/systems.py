@@ -1,13 +1,15 @@
+
 import math
 from random import uniform
+
 import pygame as pg
-from sounds import break_asteroid, ufo_death,ufo_sound
+from sounds import break_asteroid
 import config as C
 from sprites import Asteroid, Ship, UFO
 from utils import Vec, rand_edge_pos, rand_unit_vec
 
-class World:
 
+class World:
 
     def __init__(self):
         self.ship = Ship(Vec(C.WIDTH / 2, C.HEIGHT / 2))
@@ -22,7 +24,6 @@ class World:
         self.safe = C.SAFE_SPAWN_TIME
         self.ufo_timer = C.UFO_SPAWN_EVERY
 
-
     def start_wave(self):
         self.wave += 1
         count = 3 + self.wave
@@ -35,29 +36,21 @@ class World:
             vel = Vec(math.cos(ang), math.sin(ang)) * speed
             self.spawn_asteroid(pos, vel, "L")
 
-
     def spawn_asteroid(self, pos: Vec, vel: Vec, size: str):
         a = Asteroid(pos, vel, size)
         self.asteroids.add(a)
         self.all_sprites.add(a)
-
 
     def spawn_ufo(self):
         small = uniform(0, 1) < 0.5
         y = uniform(0, C.HEIGHT)
         x = 0 if uniform(0, 1) < 0.5 else C.WIDTH
         ufo = UFO(Vec(x, y), small)
-        ufo.world = self    
+        ufo.world = self    # ADIÇÂO: referência ao mundo
         self.ufos.add(ufo)
         self.all_sprites.add(ufo)
 
-        # If no UFO sound is currently playing, start looping it
-        if not ufo_sound.get_num_channels():
-            ufo_sound.play(loops=-1)
-
-
     def try_fire(self):
-        # Limit number of bullets on screen
         if len(self.bullets) >= C.MAX_BULLETS:
             return
         b = self.ship.fire()
@@ -65,23 +58,18 @@ class World:
             self.bullets.add(b)
             self.all_sprites.add(b)
 
-
     def hyperspace(self):
-        # Teleport the ship with score penalty
         self.ship.hyperspace()
         self.score = max(0, self.score - C.HYPERSPACE_COST)
-
 
     def update(self, dt: float, keys):
         self.all_sprites.update(dt)
         self.ship.control(keys, dt)
 
-        # Spawn protection timer
+        # Timers
         if self.safe > 0:
             self.safe -= dt
             self.ship.invuln = 0.5
-
-        # UFO spawn timer
         self.ufo_timer -= dt
         if self.ufo_timer <= 0:
             self.spawn_ufo()
@@ -89,7 +77,6 @@ class World:
 
         self.handle_collisions()
 
-        # Wave system
         if not self.asteroids and self.wave_cool <= 0:
             self.start_wave()
             self.wave_cool = C.WAVE_DELAY
@@ -97,8 +84,6 @@ class World:
             self.wave_cool -= dt
 
     def handle_collisions(self):
-
-        # Bullets hitting asteroids
         hits = pg.sprite.groupcollide(
             self.asteroids,
             self.bullets,
@@ -109,56 +94,37 @@ class World:
         for ast, _ in hits.items():
             self.split_asteroid(ast)
 
-        # Ship collisions (only when not invulnerable)
         if self.ship.invuln <= 0 and self.safe <= 0:
-            
-            # Asteroids hitting ship
             for ast in self.asteroids:
                 if (ast.pos - self.ship.pos).length() < (ast.r + self.ship.r):
                     self.ship_die()
-                    ufo_death.play()
                     break
-            
-            # UFOs hitting ship
-            for ufo in list(self.ufos):
+            for ufo in self.ufos:
                 if (ufo.pos - self.ship.pos).length() < (ufo.r + self.ship.r):
                     self.ship_die()
-                    ufo_death.play()
                     break
 
-            # UFOs colliding with asteroids
-            for ufo in list(self.ufos):
-                for ast in list(self.asteroids):
-                    if (ufo.pos - ast.pos).length() < (ufo.r + ast.r):
-                        ufo.kill()
-                        ufo_sound.stop()
-                        ufo_death.play()
-
-            # UFO bullets hitting ship
+            # ADIÇÂO:
+            # Balas dos UFOs acertando a nave
             for b in list(self.bullets):
                 if getattr(b, "owner", "ship") == "ufo":
                     if (b.pos - self.ship.pos).length() < (b.r + self.ship.r):
                         self.ship_die()
                         b.kill()
-                        ufo_death.play()
                         break
+            # FIM DA ADIÇÂO
 
-        # Ship bullets hitting UFOs
         for ufo in list(self.ufos):
             for b in list(self.bullets):
-                # Skip UFO bullets
+                # ADIÇÂO: só balas da nave podem acertar o UFO
                 if getattr(b, "owner", "ship") != "ship":
                     continue
-                
                 if (ufo.pos - b.pos).length() < (ufo.r + b.r):
                     score = (C.UFO_SMALL["score"] if ufo.small
                              else C.UFO_BIG["score"])
                     self.score += score
                     ufo.kill()
                     b.kill()
-                    ufo_sound.stop()
-                    ufo_death.play()
-
 
     def split_asteroid(self, ast: Asteroid):
         break_asteroid.play()
@@ -166,13 +132,10 @@ class World:
         split = C.AST_SIZES[ast.size]["split"]
         pos = Vec(ast.pos)
         ast.kill()
-
-        # Spawn resulting fragments
         for s in split:
             dirv = rand_unit_vec()
             speed = uniform(C.AST_VEL_MIN, C.AST_VEL_MAX) * 1.2
             self.spawn_asteroid(pos, dirv * speed, s)
-
 
     def ship_die(self):
         self.lives -= 1
@@ -181,21 +144,15 @@ class World:
         self.ship.angle = -90
         self.ship.invuln = C.SAFE_SPAWN_TIME
         self.safe = C.SAFE_SPAWN_TIME
-
-        # Game over condition
         if self.lives < 0:
-            ufo_sound.stop()
+            # Reset total
             self.__init__()
-
 
     def draw(self, surf: pg.Surface, font: pg.font.Font):
         for spr in self.all_sprites:
             spr.draw(surf)
 
-        # UI HUD line
         pg.draw.line(surf, (60, 60, 60), (0, 50), (C.WIDTH, 50), width=1)
-        
-        # Score, lives, wave info
         txt = f"SCORE {self.score:06d}   LIVES {self.lives}   WAVE {self.wave}"
         label = font.render(txt, True, C.WHITE)
         surf.blit(label, (10, 10))
