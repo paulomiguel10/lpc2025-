@@ -9,6 +9,7 @@ import config as C
 
 Vec = pg.math.Vector2
 
+
 def wrap_pos(pos: Vec) -> Vec:
     return Vec(pos.x % C.WIDTH, pos.y % C.HEIGHT)
 
@@ -39,8 +40,8 @@ def draw_poly(surface: pg.Surface, pts: Iterable[Tuple[int, int]]):
 
 def draw_circle(surface: pg.Surface, pos: Vec, r: int):
     pg.draw.circle(surface, C.WHITE, pos, r, width=1)
-    
-    
+
+
 def text(surface: pg.Surface, font: pg.font.Font, s: str, x: int, y: int):
     surf = font.render(s, True, C.WHITE)
     rect = surf.get_rect(topleft=(x, y))

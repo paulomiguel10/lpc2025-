@@ -28,7 +28,6 @@ class Game:
         self.scene = Scene("menu")
         self.world = World()
 
-
     def run(self):
         while True:
             dt = self.clock.tick(C.FPS) / 1000.0
@@ -59,7 +58,6 @@ class Game:
 
             pg.display.flip()
 
-
     def draw_menu(self):
         text(self.screen, self.big, "ASTEROIDS",
              C.WIDTH // 2 - 150, 180)
@@ -69,4 +67,5 @@ class Game:
         text(self.screen, self.font,
              "Pressione qualquer tecla...", 260, 360)
         text(self.screen, self.font,
-             "AL: Paulo Miguel Castro de Souza | Luiz Davi Freitas Franco", 120, 600)
+             "AL: Paulo Miguel Castro de Souza | Luiz Davi Freitas Franco",
+             120, 600)

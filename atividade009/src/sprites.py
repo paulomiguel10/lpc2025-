@@ -17,7 +17,6 @@ class Bullet(pg.sprite.Sprite):
         self.rect = pg.Rect(0, 0, self.r * 2, self.r * 2)
         self.owner = owner
 
-
     def update(self, dt: float):
         self.pos += self.vel * dt
         self.pos = wrap_pos(self.pos)
@@ -25,7 +24,6 @@ class Bullet(pg.sprite.Sprite):
         if self.ttl <= 0:
             self.kill()
         self.rect.center = self.pos
-
 
     def draw(self, surf: pg.Surface):
         draw_circle(surf, self.pos, self.r)
@@ -36,11 +34,10 @@ class Asteroid(pg.sprite.Sprite):
         super().__init__()
         self.pos = Vec(pos)
         self.vel = Vec(vel)
-        self.size = size  
+        self.size = size
         self.r = C.AST_SIZES[size]["r"]
         self.poly = self._make_poly()
         self.rect = pg.Rect(0, 0, self.r * 2, self.r * 2)
-
 
     def _make_poly(self):
         steps = 12 if self.size == "L" else 10 if self.size == "M" else 8
@@ -54,12 +51,10 @@ class Asteroid(pg.sprite.Sprite):
             pts.append(v * r)
         return pts
 
-
     def update(self, dt: float):
         self.pos += self.vel * dt
         self.pos = wrap_pos(self.pos)
         self.rect.center = self.pos
-
 
     def draw(self, surf: pg.Surface):
         pts = [(self.pos + p) for p in self.poly]
@@ -68,6 +63,7 @@ class Asteroid(pg.sprite.Sprite):
 
 class Ship(pg.sprite.Sprite):
     instance = None
+
     def __init__(self, pos: Vec):
         super().__init__()
         self.pos = Vec(pos)
@@ -80,7 +76,6 @@ class Ship(pg.sprite.Sprite):
         self.rect = pg.Rect(0, 0, self.r * 2, self.r * 2)
         Ship.instance = self
 
-
     def control(self, keys: pg.key.ScancodeWrapper, dt: float):
         if keys[pg.K_LEFT]:
             self.angle -= C.SHIP_TURN_SPEED * dt
@@ -89,7 +84,6 @@ class Ship(pg.sprite.Sprite):
         if keys[pg.K_UP]:
             self.vel += angle_to_vec(self.angle) * C.SHIP_THRUST * dt
         self.vel *= C.SHIP_FRICTION
-
 
     def fire(self) -> Bullet | None:
         if self.cool > 0:
@@ -101,12 +95,10 @@ class Ship(pg.sprite.Sprite):
         self.cool = C.SHIP_FIRE_RATE
         return Bullet(pos, vel)
 
-
     def hyperspace(self):
         self.pos = Vec(uniform(0, C.WIDTH), uniform(0, C.HEIGHT))
         self.vel.xy = (0, 0)
         self.invuln = 1.0
-
 
     def update(self, dt: float):
         if self.cool > 0:
@@ -116,7 +108,6 @@ class Ship(pg.sprite.Sprite):
         self.pos += self.vel * dt
         self.pos = wrap_pos(self.pos)
         self.rect.center = self.pos
-
 
     def draw(self, surf: pg.Surface):
         dirv = angle_to_vec(self.angle)
@@ -142,7 +133,6 @@ class UFO(pg.sprite.Sprite):
         self.turn_rate = 2.5
         self.fire_cool = uniform(1.0, 2.5)
         self.world = None
-
 
     def update(self, dt: float):
         # Follow the player if it's a small UFO
@@ -196,13 +186,13 @@ class UFO(pg.sprite.Sprite):
             self.world.all_sprites.add(b)
 
             # Reset cooldown (big UFO slower, small UFO faster)
-            self.fire_cool = uniform(0.8, 1.3) if not self.small else uniform(0.3, 0.6)
+            self.fire_cool = uniform(
+                0.8, 1.3) if not self.small else uniform(0.3, 0.6)
 
         # Movement
         self.pos += self.dir * self.speed * dt
         self.pos = wrap_pos(self.pos)
         self.rect.center = self.pos
-
 
     def draw(self, surf: pg.Surface):
         w, h = self.r * 2, self.r
