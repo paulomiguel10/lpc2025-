@@ -18,6 +18,12 @@ class World:
         self.lives = C.START_LIVES
         self.safe = C.SAFE_SPAWN_TIME
         self.ufo_timer = C.UFO_SPAWN_EVERY
+    
+    def try_fire(self):
+        bullet = self.ship.fire()
+        if bullet:
+            self.bullets.add(bullet)
+            self.all_sprites.add(bullet)
 
     def spawn_ufo(self):
         side = uniform(0, 4)

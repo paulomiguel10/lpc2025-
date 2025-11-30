@@ -10,11 +10,12 @@ from config import WIDTH, HEIGHT, FPS
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # Caminho da imagem de fundo
-BACKGROUND_PATH = os.path.join(BASE_DIR, "sprites", "rua.jpeg")
+BACKGROUND_PATH = os.path.join(BASE_DIR, "sprites", "cenario.png")
 
-# 🔧 MUDANÇA: removido .convert() para não exigir display inicializado
+# removido .convert() para não exigir display inicializado
 background = pg.image.load(BACKGROUND_PATH)
 background = pg.transform.scale(background, (WIDTH, HEIGHT))
+
 
 
 class Bullet(pg.sprite.Sprite):
@@ -124,10 +125,11 @@ class Ship(pg.sprite.Sprite):
             # contorno de invulnerabilidade
             draw_circle(surf, self.pos, self.r + 3)
 
-
 class UFO(pg.sprite.Sprite):
     def __init__(self, pos: Vec, target: pg.sprite.Sprite):
         super().__init__()
+        
+        zombie_IMG = pg.image.load(os.path.join(BASE_DIR, "sprites", "zombie_parado_baixo.png")).convert_alpha()
         self.pos = Vec(pos)
         self.target = target
         self.r = C.UFO_SMALL["r"]
@@ -137,8 +139,10 @@ class UFO(pg.sprite.Sprite):
         self.fire_cooldown = 1.2
         self.time_since_last_shot = 0.0
 
-        self.image = pg.Surface((self.r * 2, self.r * 2), pg.SRCALPHA)
+        self.image = zombie_IMG
         self.rect = self.image.get_rect(center=self.pos)
+
+        self.r = self.rect.width // 2
 
     def update(self, dt: float):
         # Aim at target (ship)
@@ -171,15 +175,4 @@ class UFO(pg.sprite.Sprite):
         self.rect.center = self.pos
 
     def draw(self, surf: pg.Surface):
-        # Corpo principal
-        draw_circle(surf, self.pos, self.r)
-
-        # Cúpula
-        dome_pos = self.pos - Vec(0, self.r * 0.3)
-        draw_circle(surf, dome_pos, self.r * 0.6)
-
-        # Base
-        left_base = self.pos + Vec(-self.r * 1.2, self.r * 0.2)
-        right_base = self.pos + Vec(self.r * 1.2, self.r * 0.2)
-        front_base = self.pos + Vec(0, self.r * 0.7)
-        draw_poly(surf, [left_base, right_base, front_base])
+        surf.blit(self.image, self.rect)

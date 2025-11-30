@@ -59,7 +59,7 @@ class Game:
             pg.display.flip()
 
     def draw_menu(self):
-        text(self.screen, self.big, "ASTEROIDS",
+        text(self.screen, self.big, "JUCIMAR VS ZOMBIES",
              C.WIDTH // 2 - 150, 180)
         text(self.screen, self.font,
              "Setas: virar/acelerar  Espaço: tiro  Shift: hiper",

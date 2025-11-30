@@ -2,7 +2,7 @@ from game import Game
 
 
 def main():
-    Game().run()
+    Game().run() 
 
 
 if __name__ == "__main__":
