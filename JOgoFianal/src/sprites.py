@@ -49,8 +49,11 @@ class Ship(pg.sprite.Sprite):
         if keys[pg.K_RIGHT]:
             self.angle += C.SHIP_TURN_SPEED * dt
         if keys[pg.K_UP]:
-            self.vel += angle_to_vec(self.angle) * C.SHIP_THRUST * dt
-        self.vel *= C.SHIP_FRICTION
+            # Movimento imediato, sem derrapagem
+            self.vel = angle_to_vec(self.angle) * C.SHIP_THRUST
+        else:
+            # Sem tecla de acelerar: para completamente
+            self.vel.xy = (0, 0)
 
     def fire(self) -> Bullet | None:
         if self.cool > 0:
@@ -97,7 +100,6 @@ class UFO(pg.sprite.Sprite):
         self.rect = pg.Rect(0, 0, self.r * 2, self.r * 2)
         self.dir = Vec(1, 0) if uniform(0, 1) < 0.5 else Vec(-1, 0)
         self.turn_rate = 2.5
-        self.fire_cool = uniform(1.0, 2.5)
         self.world = None
 
     def update(self, dt: float):
@@ -120,40 +122,6 @@ class UFO(pg.sprite.Sprite):
 
                 new_angle = current_angle + angle_diff
                 self.dir = Vec(math.cos(new_angle), math.sin(new_angle))
-
-        # Small UFO shooting logic
-        self.fire_cool -= dt
-        if (Ship.instance is not None
-                and self.world is not None
-                and self.fire_cool <= 0):
-            if self.small:
-                to_ship = Vec(Ship.instance.pos) - self.pos
-                if to_ship.length_squared() > 0:
-                    dirv = to_ship.normalize()
-
-                    # uses "aim" config to determine inaccuracy
-                    aim = C.UFO_SMALL["aim"]
-                    max_spread = math.radians(30)
-                    spread = (1.0 - aim) * max_spread
-                    jitter = uniform(-spread, spread)
-                    base_angle = math.atan2(dirv.y, dirv.x)
-                    shot_angle = base_angle + jitter
-                    shot_dir = Vec(math.cos(shot_angle), math.sin(shot_angle))
-            else:
-                # Big UFO shoots randomly in all directions
-                angle = uniform(0, math.tau)
-                shot_dir = Vec(math.cos(angle), math.sin(angle))
-
-            # Spawn bullet
-            bullet_pos = self.pos + shot_dir * (self.r + 4)
-            bullet_vel = shot_dir * C.SHIP_BULLET_SPEED
-            b = Bullet(bullet_pos, bullet_vel, owner="ufo")
-            self.world.bullets.add(b)
-            self.world.all_sprites.add(b)
-
-            # Reset cooldown (big UFO slower, small UFO faster)
-            self.fire_cool = uniform(
-                0.8, 1.3) if not self.small else uniform(0.3, 0.6)
 
         # Movement
         self.pos += self.dir * self.speed * dt

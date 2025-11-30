@@ -64,16 +64,6 @@ class World:
                     self.ship_die()
                     break
 
-            # ADIÇÂO:
-            # Balas dos UFOs acertando a nave
-            for b in list(self.bullets):
-                if getattr(b, "owner", "ship") == "ufo":
-                    if (b.pos - self.ship.pos).length() < (b.r + self.ship.r):
-                        self.ship_die()
-                        b.kill()
-                        break
-            # FIM DA ADIÇÂO
-
         for ufo in list(self.ufos):
             for b in list(self.bullets):
                 # ADIÇÂO: só balas da nave podem acertar o UFO

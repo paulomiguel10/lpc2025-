@@ -32,10 +32,10 @@ BULLET_TTL = 1.0
 MAX_BULLETS = 4
 
 # UFO
-UFO_SPAWN_EVERY = 15.0  # seconds
+UFO_SPAWN_EVERY = 3.0  # seconds
 UFO_SPEED = 80.0
-UFO_BIG = {"r": 18, "score": 200, "aim": 0.2}
-UFO_SMALL = {"r": 12, "score": 1000, "aim": 0.6}
+UFO_BIG = {"r": 18, "score": 200}
+UFO_SMALL = {"r": 12, "score": 1000}
 
 # Colors
 WHITE = (240, 240, 240)
