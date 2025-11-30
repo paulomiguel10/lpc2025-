@@ -1,10 +1,9 @@
-
 import math
 from random import uniform
 
 import pygame as pg
 import config as C
-from sprites import Ship, UFO
+from sprites import Ship, UFO, background
 from utils import Vec, rand_edge_pos
 
 
@@ -21,43 +20,33 @@ class World:
         self.ufo_timer = C.UFO_SPAWN_EVERY
 
     def spawn_ufo(self):
-        small = True  # apenas naves pequenas
-        y = uniform(0, C.HEIGHT)
-        x = 0 if uniform(0, 1) < 0.5 else C.WIDTH
-        ufo = UFO(Vec(x, y), small)
-        ufo.world = self    # ADIÇÂO: referência ao mundo
+        side = uniform(0, 4)
+        if side < 1:
+            pos = Vec(0, uniform(0, C.HEIGHT))
+        elif side < 2:
+            pos = Vec(C.WIDTH, uniform(0, C.HEIGHT))
+        elif side < 3:
+            pos = Vec(uniform(0, C.WIDTH), 0)
+        else:
+            pos = Vec(uniform(0, C.WIDTH), C.HEIGHT)
+
+        ufo = UFO(pos, self.ship)
         self.ufos.add(ufo)
         self.all_sprites.add(ufo)
 
-    def try_fire(self):
-        if len(self.bullets) >= C.MAX_BULLETS:
-            return
-        b = self.ship.fire()
-        if b:
-            self.bullets.add(b)
-            self.all_sprites.add(b)
-
-    def hyperspace(self):
-        self.ship.hyperspace()
-        self.score = max(0, self.score - C.HYPERSPACE_COST)
-
     def update(self, dt: float, keys):
-        self.all_sprites.update(dt)
-        self.ship.control(keys, dt)
+        self.ship.update(dt, keys)
+        self.bullets.update(dt)
+        self.ufos.update(dt)
 
-        # Timers
-        if self.safe > 0:
-            self.safe -= dt
-            self.ship.invuln = 0.5
+        self.safe -= dt
         self.ufo_timer -= dt
+
         if self.ufo_timer <= 0:
             self.spawn_ufo()
             self.ufo_timer = C.UFO_SPAWN_EVERY
 
-        self.handle_collisions()
-
-
-    def handle_collisions(self):
+        # Colisão nave x UFO
         if self.ship.invuln <= 0 and self.safe <= 0:
             for ufo in self.ufos:
                 if (ufo.pos - self.ship.pos).length() < (ufo.r + self.ship.r):
@@ -66,7 +55,7 @@ class World:
 
         for ufo in list(self.ufos):
             for b in list(self.bullets):
-                # ADIÇÂO: só balas da nave podem acertar o UFO
+                # Só balas da nave podem acertar o UFO
                 if getattr(b, "owner", "ship") != "ship":
                     continue
                 if (ufo.pos - b.pos).length() < (ufo.r + b.r):
@@ -86,6 +75,8 @@ class World:
             self.__init__()
 
     def draw(self, surf: pg.Surface, font: pg.font.Font):
+        # Desenha o fundo primeiro
+        surf.blit(background, (0, 0))
         for spr in self.all_sprites:
             spr.draw(surf)
 
