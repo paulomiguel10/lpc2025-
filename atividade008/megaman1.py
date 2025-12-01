@@ -17,7 +17,7 @@ class Megaman(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.sprites = []
-        #oi
+    
         #Sprites de andar
         self.sprites_andar = [
             pygame.image.load('atividade008/sprites/andar_1.png'),

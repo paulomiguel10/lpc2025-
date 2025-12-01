@@ -6,7 +6,6 @@ import config as C
 from sprites import Ship, UFO, background
 from utils import Vec, rand_edge_pos
 
-
 class World:
 
     def __init__(self):

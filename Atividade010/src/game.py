@@ -2,9 +2,9 @@
 import random
 import sys
 from dataclasses import dataclass
-
+from config import WIDTH,HEIGHT
 import pygame as pg
-
+from sprites import menu
 import config as C
 from systems import World
 from utils import text
@@ -13,7 +13,6 @@ from utils import text
 @dataclass
 class Scene:
     name: str
-
 
 class Game:
     def __init__(self):
@@ -27,6 +26,9 @@ class Game:
         self.big = pg.font.SysFont("consolas", 48)
         self.scene = Scene("menu")
         self.world = World()
+    
+    def draw_menu(self):
+        self.screen.blit(menu,(0,0))
 
     def run(self):
         while True:
@@ -58,14 +60,3 @@ class Game:
 
             pg.display.flip()
 
-    def draw_menu(self):
-        text(self.screen, self.big, "JUCIMAR VS ZOMBIES",
-             C.WIDTH // 2 - 150, 180)
-        text(self.screen, self.font,
-             "Setas: virar/acelerar  Espaço: tiro  Shift: hiper",
-             160, 300)
-        text(self.screen, self.font,
-             "Pressione qualquer tecla...", 260, 360)
-        text(self.screen, self.font,
-             "AL: Paulo Miguel Castro de Souza | Luiz Davi Freitas Franco",
-             120, 600)
