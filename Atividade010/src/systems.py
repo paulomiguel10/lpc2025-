@@ -4,6 +4,7 @@ import pygame as pg
 import config as C
 from sprites import Ship, UFO, background
 from utils import Vec
+from sounds import sound_shot, zombie_sound, zombie_death
 
 
 class World:
@@ -28,8 +29,10 @@ class World:
         if bullet:
             self.bullets.add(bullet)
             self.all_sprites.add(bullet)
-
+        sound_shot.play()
+        
     def spawn_ufo(self):
+        zombie_sound.play()
         side = uniform(0, 4)
         if side < 1:
             pos = Vec(0, uniform(0, C.HEIGHT))
@@ -75,10 +78,15 @@ class World:
                     ufo.dir.rotate_ip(90)
         
         # Colisão ship com as paredes
-        #  for ship in self.ship:
-        #     rect = ship.rect
-        #     for b in self.buildings:
-
+        ship_rect = self.ship.rect
+        for b in self.buildings:
+            if ship_rect.colliderect(b):
+                # Recuar o movimento do player
+                self.ship.pos -= self.ship.vel * dt
+                # Atualizar rect depois de mover a posição
+                self.ship.rect.center = self.ship.pos
+                # Para garantir que ele realmente pare
+                self.ship.vel.xy = (0, 0)
 
         for ufo in list(self.ufos):
             for b in list(self.bullets):
@@ -89,6 +97,7 @@ class World:
                     self.score += C.UFO_SMALL["score"]
                     ufo.kill()
                     b.kill()
+                    zombie_death.play()
 
     def ship_die(self):
         self.lives -= 1
@@ -111,6 +120,3 @@ class World:
         txt = f"SCORE {self.score:06d}   LIVES {self.lives}"
         label = font.render(txt, True, C.WHITE)
         surf.blit(label, (10, 10))
-
-        for b in self.buildings:
-            pg.draw.rect(surf, (255, 0, 0), b, 2)

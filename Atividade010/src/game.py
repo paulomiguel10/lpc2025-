@@ -14,13 +14,18 @@ from utils import text
 class Scene:
     name: str
 
+
+pg.mixer.init()
+
+
 class Game:
+
     def __init__(self):
         pg.init()
         if C.RANDOM_SEED is not None:
             random.seed(C.RANDOM_SEED)
         self.screen = pg.display.set_mode((C.WIDTH, C.HEIGHT))
-        pg.display.set_caption("Asteroides")
+        pg.display.set_caption("Juci vs Zombies")
         self.clock = pg.time.Clock()
         self.font = pg.font.SysFont("consolas", 20)
         self.big = pg.font.SysFont("consolas", 48)
@@ -28,7 +33,8 @@ class Game:
         self.world = World()
     
     def draw_menu(self):
-        self.screen.blit(menu,(0,0))
+        self.screen.blit(menu, (0, 0))
+        
 
     def run(self):
         while True:
@@ -41,7 +47,7 @@ class Game:
                     pg.quit()
                     sys.exit(0)
                 if self.scene.name == "play":
-                    if e.type == pg.KEYDOWN and e.key == pg.K_SPACE:
+                    if e.type == pg.MOUSEBUTTONDOWN and e.button == 1:
                         self.world.try_fire()
                     if e.type == pg.KEYDOWN and e.key == pg.K_LSHIFT:
                         self.world.hyperspace()
