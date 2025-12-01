@@ -150,7 +150,8 @@ class Ship(pg.sprite.Sprite):
             self.anim_timer += dt
             if self.anim_timer >= self.anim_speed:
                 self.anim_timer = 0.0
-                self.current_frame = (self.current_frame + 1) % len(self.sprites)
+                self.current_frame = (
+                    self.current_frame + 1) % len(self.sprites)
         else:
             self.current_frame = 0
             self.anim_timer = 0.0
@@ -193,7 +194,7 @@ class Ship(pg.sprite.Sprite):
             mouse_x, _ = pg.mouse.get_pos()
             img = self.image
             # Se o mouse estiver à esquerda do player, espelha o sprite na horizontal
-            if mouse_x < self.pos.x:
+            if mouse_x > self.pos.x:
                 img = pg.transform.flip(self.image, True, False)
             rect = img.get_rect(center=self.pos)
             surf.blit(img, rect)
@@ -202,6 +203,8 @@ class Ship(pg.sprite.Sprite):
         if self.invuln > 0:
             raio = max(self.rect.width, self.rect.height) // 2
             draw_circle(surf, self.pos, raio + 3)
+
+
 zombiemov_gif = os.path.join(BASE_DIR, "sprites", "zombie_anda.gif")
 juci_gif = os.path.join(BASE_DIR, "sprites", "juci.gif")
 
