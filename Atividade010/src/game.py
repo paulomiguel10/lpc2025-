@@ -8,6 +8,7 @@ from sprites import menu
 import config as C
 from systems import World
 from utils import text
+from sounds import background_menu
 
 
 @dataclass
