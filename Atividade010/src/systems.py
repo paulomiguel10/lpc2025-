@@ -1,10 +1,10 @@
-import math
-from random import uniform
 
+from random import uniform
 import pygame as pg
 import config as C
 from sprites import Ship, UFO, background
-from utils import Vec, rand_edge_pos
+from utils import Vec
+
 
 class World:
 
@@ -18,6 +18,11 @@ class World:
         self.safe = C.SAFE_SPAWN_TIME
         self.ufo_timer = C.UFO_SPAWN_EVERY
     
+        self.buildings = [
+            pg.Rect(45, 75, 190, 220),  # Prédio esquerdo
+            pg.Rect(735, 330, 140, 250)  # Prédio direito
+                      ]
+        
     def try_fire(self):
         bullet = self.ship.fire()
         if bullet:
@@ -51,12 +56,29 @@ class World:
             self.spawn_ufo()
             self.ufo_timer = C.UFO_SPAWN_EVERY
 
-        # Colisão nave x UFO
+        # Colisão Player x Zombie
         if self.ship.invuln <= 0 and self.safe <= 0:
             for ufo in self.ufos:
                 if (ufo.pos - self.ship.pos).length() < (ufo.r + self.ship.r):
                     self.ship_die()
                     break
+
+        # Colisão dos zumbis com as paredes
+        for ufo in self.ufos:
+            rect = ufo.rect
+            for b in self.buildings:
+                if rect.colliderect(b):
+                    # Recuar movimento
+                    ufo.pos -= ufo.dir * ufo.speed * dt
+                    ufo.rect.center = ufo.pos
+                    # Faz o zumbi andar pro outro lado
+                    ufo.dir.rotate_ip(90)
+        
+        # Colisão ship com as paredes
+        #  for ship in self.ship:
+        #     rect = ship.rect
+        #     for b in self.buildings:
+
 
         for ufo in list(self.ufos):
             for b in list(self.bullets):
@@ -89,3 +111,6 @@ class World:
         txt = f"SCORE {self.score:06d}   LIVES {self.lives}"
         label = font.render(txt, True, C.WHITE)
         surf.blit(label, (10, 10))
+
+        for b in self.buildings:
+            pg.draw.rect(surf, (255, 0, 0), b, 2)
