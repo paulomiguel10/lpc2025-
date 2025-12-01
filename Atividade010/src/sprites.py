@@ -34,8 +34,12 @@ class Bullet(pg.sprite.Sprite):
         self.ttl = 0.6
         self.r = 2
         self.owner = owner
+        angle = math.degrees(math.atan2(-self.vel.y, self.vel.x)) - 90
 
-        self.image = pg.Surface((self.r * 2, self.r * 2), pg.SRCALPHA)
+        self.image = pg.transform.rotate(pg.transform.scale(pg.image.load(
+            os.path.join(BASE_DIR, "sprites", "imagem.png")
+        ).convert_alpha(), (self.r * 8, self.r * 8)), angle)
+
         self.rect = self.image.get_rect(center=self.pos)
 
     def update(self, dt: float):
@@ -47,7 +51,7 @@ class Bullet(pg.sprite.Sprite):
         self.rect.center = self.pos
 
     def draw(self, surf: pg.Surface):
-        draw_circle(surf, self.pos, self.r)
+        surf.blit(self.image, self.rect)
 
 
 class Ship(pg.sprite.Sprite):

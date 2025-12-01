@@ -2,7 +2,7 @@
 import random
 import sys
 from dataclasses import dataclass
-from config import WIDTH,HEIGHT
+from config import WIDTH, HEIGHT
 import pygame as pg
 from sprites import menu
 import config as C
@@ -32,10 +32,9 @@ class Game:
         self.big = pg.font.SysFont("consolas", 48)
         self.scene = Scene("menu")
         self.world = World()
-    
+
     def draw_menu(self):
         self.screen.blit(menu, (0, 0))
-        
 
     def run(self):
         while True:
@@ -66,4 +65,3 @@ class Game:
                 self.world.draw(self.screen, self.font)
 
             pg.display.flip()
-
