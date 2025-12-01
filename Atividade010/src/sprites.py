@@ -25,6 +25,7 @@ MENU_PATH = os.path.join(BASE_DIR, "sprites", "menu_game.png")
 menu = pg.image.load(MENU_PATH)
 menu = pg.transform.scale(menu, (WIDTH, HEIGHT))
 
+
 class Bullet(pg.sprite.Sprite):
     def __init__(self, pos: Vec, vel: Vec, owner: str = "ship"):
         super().__init__()
@@ -56,59 +57,128 @@ class Ship(pg.sprite.Sprite):
         super().__init__()
         self.pos = Vec(pos)
         self.vel = Vec(0, 0)
+        # Direção "olhando" inicial (apenas usada como fallback)
+        self.facing = Vec(0, -1)
         self.angle = -90
         self.r = C.SHIP_RADIUS
         self.cool = 0.0
         self.invuln = C.SAFE_SPAWN_TIME
+        self.mouse_was_down = False
 
-        self.image = pg.Surface((self.r * 2, self.r * 2), pg.SRCALPHA)
+        # Sprites de animação do player (até 11 quadros) usando juci.gif
+        self.sprites = []
+        try:
+            gif = Image.open(juci_gif)
+            while len(self.sprites) < 11:
+                gif.seek(len(self.sprites))
+                frame = gif.copy().convert("RGBA")
+                frame_surf = pg.image.fromstring(
+                    frame.tobytes(), frame.size, frame.mode
+                )
+                frame_surf = pg.transform.scale(
+                    frame_surf, (int(self.r * 5), int(self.r * 5))
+                )
+                self.sprites.append(frame_surf)
+        except EOFError:
+            # Se o GIF tiver menos de 11 quadros, usamos só os disponíveis
+            pass
+
+        self.current_frame = 0
+        self.anim_timer = 0.0
+        self.anim_speed = 0.12  # segundos por frame
+
+        if self.sprites:
+            self.image = self.sprites[0]
+        else:
+            # Fallback: superfície vazia, caso não carregue sprites
+            self.image = pg.Surface((self.r * 2, self.r * 2), pg.SRCALPHA)
+
         self.rect = self.image.get_rect(center=self.pos)
 
         Ship.instance = self
 
-    def rotate(self, dir: float, dt: float):
-        self.angle += dir * C.SHIP_TURN_SPEED * dt
-
-    def accelerate(self, dt: float):
-        dirv = angle_to_vec(self.angle)
-        self.vel += dirv * C.SHIP_THRUST * dt
-
     def update(self, dt: float, keys):
-        if keys[pg.K_LEFT]:
-            self.rotate(-1, dt)
-        if keys[pg.K_RIGHT]:
-            self.rotate(1, dt)
+        """Atualiza posição, animação e ações do player.
 
-        # Aceleração
-        if keys[pg.K_UP]:
-            self.accelerate(dt)
+        Movimento em quatro direções usando as setas.
+        A animação só roda quando o player está se movendo.
+        """
+        moving = False
+        move_dir = Vec(0, 0)
+
+        # Movimento horizontal
+        if keys[pg.K_a]:
+            move_dir.x -= 1
+            moving = True
+        if keys[pg.K_d]:
+            move_dir.x += 1
+            moving = True
+
+        # Movimento vertical
+        if keys[pg.K_w]:
+            move_dir.y -= 1
+            moving = True
+        if keys[pg.K_s]:
+            move_dir.y += 1
+            moving = True
+
+        # Normaliza direção e aplica velocidade
+        if move_dir.length_squared() > 0:
+            move_dir = move_dir.normalize()
+            self.vel = move_dir * C.SHIP_THRUST
         else:
-            # Sem tecla de acelerar: para completamente
+            # Parado: sem velocidade
             self.vel.xy = (0, 0)
 
-        # Fogo
-        if keys[pg.K_SPACE]:
+        # Tiro (mirando com o mouse) no clique esquerdo (apenas na transição solto->pressionado)
+        mouse_down = pg.mouse.get_pressed()[0]
+        if mouse_down and not self.mouse_was_down:
             self.fire()
-
-        # Hiperespaço
-        if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:
-            self.hyperspace()
+        self.mouse_was_down = mouse_down
 
         if self.cool > 0:
             self.cool -= dt
         if self.invuln > 0:
             self.invuln -= dt
 
+        # Movimento físico
         self.pos += self.vel * dt
         self.pos = wrap_pos(self.pos)
-        self.rect.center = self.pos
+
+        # Animação do juci.gif
+        if moving and self.sprites:
+            self.anim_timer += dt
+            if self.anim_timer >= self.anim_speed:
+                self.anim_timer = 0.0
+                self.current_frame = (self.current_frame + 1) % len(self.sprites)
+        else:
+            self.current_frame = 0
+            self.anim_timer = 0.0
+
+        if self.sprites:
+            self.image = self.sprites[self.current_frame]
+            self.rect = self.image.get_rect(center=self.pos)
+        else:
+            self.rect.center = self.pos
 
     def fire(self) -> "Bullet | None":
+        """Dispara em direção ao mouse."""
         if self.cool > 0:
             return None
-        dirv = angle_to_vec(self.angle)
+
+        mouse_pos = Vec(pg.mouse.get_pos())
+        dirv = mouse_pos - self.pos
+
+        if dirv.length_squared() == 0:
+            dirv = Vec(0, -1)
+        else:
+            dirv = dirv.normalize()
+
+        # Atualiza facing apenas para consistência se for usado em outro lugar
+        self.facing = Vec(dirv)
+
         pos = self.pos + dirv * (self.r + 6)
-        vel = self.vel + dirv * C.SHIP_BULLET_SPEED
+        vel = dirv * C.SHIP_BULLET_SPEED
         self.cool = C.SHIP_FIRE_RATE
         return Bullet(pos, vel)
 
@@ -118,30 +188,32 @@ class Ship(pg.sprite.Sprite):
         self.invuln = 1.0
 
     def draw(self, surf: pg.Surface):
-        dirv = angle_to_vec(self.angle)
-        left = angle_to_vec(self.angle + 140)
-        right = angle_to_vec(self.angle - 140)
+        # Desenha o sprite atual do player olhando para a mira (esquerda/direita)
+        if hasattr(self, "image") and self.image:
+            mouse_x, _ = pg.mouse.get_pos()
+            img = self.image
+            # Se o mouse estiver à esquerda do player, espelha o sprite na horizontal
+            if mouse_x < self.pos.x:
+                img = pg.transform.flip(self.image, True, False)
+            rect = img.get_rect(center=self.pos)
+            surf.blit(img, rect)
 
-        tip = self.pos + dirv * self.r
-        left_pt = self.pos + left * self.r * 0.8
-        right_pt = self.pos + right * self.r * 0.8
-
-        draw_poly(surf, [tip, left_pt, right_pt])
-
+        # Contorno de invulnerabilidade permanece em volta do personagem
         if self.invuln > 0:
-            # contorno de invulnerabilidade
-            draw_circle(surf, self.pos, self.r + 3)
+            raio = max(self.rect.width, self.rect.height) // 2
+            draw_circle(surf, self.pos, raio + 3)
+zombiemov_gif = os.path.join(BASE_DIR, "sprites", "zombie_anda.gif")
+juci_gif = os.path.join(BASE_DIR, "sprites", "juci.gif")
 
-zombiemov_gif = os.path.join(BASE_DIR,"sprites","zombie_anda.gif")
 
 class UFO(pg.sprite.Sprite):
     def __init__(self, pos: Vec, target: pg.sprite.Sprite):
         super().__init__()
         self.speed = 60
         self.turn_rate = math.radians(120)
-        self.atual = 0  
+        self.atual = 0
         self.anim_timer = 0
-        self.anim_speed = 0.12 #segundos por frame
+        self.anim_speed = 0.12  # segundos por frame
         self.r = 16
 
         # Carregar sprites
@@ -152,7 +224,8 @@ class UFO(pg.sprite.Sprite):
             while True:
                 gif.seek(len(self.sprites))
                 frame = gif.copy().convert("RGBA")
-                zombiewalk_img = pg.image.fromstring(frame.tobytes(), frame.size, frame.mode)
+                zombiewalk_img = pg.image.fromstring(
+                    frame.tobytes(), frame.size, frame.mode)
 
                 # ESCALA
                 zombiewalk_img = pg.transform.scale(zombiewalk_img, (32, 48))
@@ -160,9 +233,9 @@ class UFO(pg.sprite.Sprite):
                 self.sprites.append(zombiewalk_img)
         except EOFError:
             pass
-        
+
         self.image = self.sprites[0]
-        self.rect = self.image.get_rect(center = pos)
+        self.rect = self.image.get_rect(center=pos)
 
         self.pos = Vec(pos)
         self.target = target
@@ -196,14 +269,14 @@ class UFO(pg.sprite.Sprite):
         self.pos += self.dir * self.speed * dt
         self.pos = wrap_pos(self.pos)
         self.rect.center = self.pos
-        #Animation
+        # Animation
         self.anim_timer += dt
         if self.anim_timer >= self.anim_speed:
             self.anim_timer = 0
             self.atual = (self.atual + 1) % len(self.sprites)
-            
+
             self.image = self.sprites[self.atual]
-            self.rect = self.image.get_rect(center =self.rect.center)
+            self.rect = self.image.get_rect(center=self.rect.center)
 
     def draw(self, surf: pg.Surface):
         surf.blit(self.image, self.rect)
