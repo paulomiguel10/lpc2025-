@@ -14,7 +14,7 @@ class World:
         self.bullets = pg.sprite.Group()
         self.ufos = pg.sprite.Group()
         self.all_sprites = pg.sprite.Group(self.ship)
-        
+
         self.ufo_timer = C.UFO_SPAWN_EVERY
         self.spawn_multiplier = 1  # Quantos zumbis nascem por vez
         self.difficulty_timer = 0  # Contador de tempo para aumentar dificul
@@ -23,12 +23,12 @@ class World:
         self.lives = C.START_LIVES
         self.safe = C.SAFE_SPAWN_TIME
         self.ufo_timer = C.UFO_SPAWN_EVERY
-    
+
         self.buildings = [
             pg.Rect(45, 75, 190, 220),  # Prédio esquerdo
             pg.Rect(735, 330, 140, 250)  # Prédio direito
-                      ]
-        
+        ]
+
     def try_fire(self):
         bullet = self.ship.fire()
         if bullet:
@@ -36,7 +36,7 @@ class World:
             self.all_sprites.add(bullet)
         sound_shot.play()
 
-    # Spawnar zombies    
+    # Spawnar zombies
     def spawn_ufo(self):
         zombie_sound.play()
         side = uniform(0, 4)
@@ -60,20 +60,20 @@ class World:
 
         self.safe -= dt
         self.ufo_timer -= dt
-        
+
         # Aumenta dificul
         self.difficulty_timer += dt
 
         if self.difficulty_timer >= 25:  # A cada 25 segundos
             self.difficulty_timer = 0
-        
+
         # Aumenta quantos zumbis nascem por vez (máx 8)
             if self.spawn_multiplier < 8:
                 self.spawn_multiplier += 1
-        
+
         # Diminui o tempo entre spawns (mínimo 0.4s)
             C.UFO_SPAWN_EVERY = max(0.4, C.UFO_SPAWN_EVERY * 0.85)
-   
+
     # SPAWN DE ZUMBIS
         if self.ufo_timer <= 0:
             for _ in range(self.spawn_multiplier):   # spawn múltiplo
@@ -99,7 +99,7 @@ class World:
                     ufo.rect.center = ufo.pos
                     # Faz o zumbi andar pro outro lado
                     ufo.dir.rotate_ip(90)
-        
+
         # Colisão ship com as paredes
         ship_rect = self.ship.rect
         for b in self.buildings:

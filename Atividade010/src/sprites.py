@@ -3,8 +3,8 @@ import os
 from random import uniform
 import pygame as pg
 import config as C
-from utils import Vec, angle_to_vec, draw_circle, draw_poly, wrap_pos
-from config import WIDTH, HEIGHT, FPS
+from utils import Vec, draw_circle, wrap_pos
+from config import WIDTH, HEIGHT
 from PIL import Image
 
 # Caminho base do projeto
@@ -134,7 +134,7 @@ class Ship(pg.sprite.Sprite):
             # Parado: sem velocidade
             self.vel.xy = (0, 0)
 
-        # Tiro (mirando com o mouse) no clique esquerdo (apenas na transição solto->pressionado)
+        # Tiro (mirando com o mouse) no clique esquerdo
         mouse_down = pg.mouse.get_pressed()[0]
         if mouse_down and not self.mouse_was_down:
             self.fire()
@@ -193,11 +193,11 @@ class Ship(pg.sprite.Sprite):
         self.invuln = 1.0
 
     def draw(self, surf: pg.Surface):
-        # Desenha o sprite atual do player olhando para a mira (esquerda/direita)
+        # Desenha o sprite atual do player olhando para a mira
         if hasattr(self, "image") and self.image:
             mouse_x, _ = pg.mouse.get_pos()
             img = self.image
-            # Se o mouse estiver à esquerda do player, espelha o sprite na horizontal
+            # Se o mouse estiver à esquerda do player
             if mouse_x > self.pos.x:
                 img = pg.transform.flip(self.image, True, False)
             rect = img.get_rect(center=self.pos)
