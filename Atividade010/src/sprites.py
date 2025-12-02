@@ -27,7 +27,7 @@ menu = pg.transform.scale(menu, (WIDTH, HEIGHT))
 
 
 class Bullet(pg.sprite.Sprite):
-    def __init__(self, pos: Vec, vel: Vec, owner: str = "ship"):
+    def __init__(self, pos: Vec, vel: Vec, owner: str = "JUCI"):
         super().__init__()
         self.pos = Vec(pos)
         self.vel = Vec(vel)
@@ -54,7 +54,7 @@ class Bullet(pg.sprite.Sprite):
         surf.blit(self.image, self.rect)
 
 
-class Ship(pg.sprite.Sprite):
+class JUCI(pg.sprite.Sprite):
     instance = None
 
     def __init__(self, pos: Vec):
@@ -64,15 +64,15 @@ class Ship(pg.sprite.Sprite):
         # Direção "olhando" inicial (apenas usada como fallback)
         self.facing = Vec(0, -1)
         self.angle = -90
-        self.r = C.SHIP_RADIUS
+        self.r = C.JUCI_RADIUS
         self.cool = 0.0
         self.invuln = C.SAFE_SPAWN_TIME
         self.mouse_was_down = False
 
-        # Sprites de animação do player (até 11 quadros) usando juci.gif
+        # Sprites de animação do player (até 11 quadros) usando JUCI.gif
         self.sprites = []
         try:
-            gif = Image.open(juci_gif)
+            gif = Image.open(JUCI_gif)
             while len(self.sprites) < 11:
                 gif.seek(len(self.sprites))
                 frame = gif.copy().convert("RGBA")
@@ -99,7 +99,7 @@ class Ship(pg.sprite.Sprite):
 
         self.rect = self.image.get_rect(center=self.pos)
 
-        Ship.instance = self
+        JUCI.instance = self
 
     def update(self, dt: float, keys):
         """Atualiza posição, animação e ações do player.
@@ -129,7 +129,7 @@ class Ship(pg.sprite.Sprite):
         # Normaliza direção e aplica velocidade
         if move_dir.length_squared() > 0:
             move_dir = move_dir.normalize()
-            self.vel = move_dir * C.SHIP_THRUST
+            self.vel = move_dir * C.JUCI_THRUST
         else:
             # Parado: sem velocidade
             self.vel.xy = (0, 0)
@@ -149,7 +149,7 @@ class Ship(pg.sprite.Sprite):
         self.pos += self.vel * dt
         self.pos = wrap_pos(self.pos)
 
-        # Animação do juci.gif
+        # Animação do JUCI.gif
         if moving and self.sprites:
             self.anim_timer += dt
             if self.anim_timer >= self.anim_speed:
@@ -183,8 +183,8 @@ class Ship(pg.sprite.Sprite):
         self.facing = Vec(dirv)
 
         pos = self.pos + dirv * (self.r + 6)
-        vel = dirv * C.SHIP_BULLET_SPEED
-        self.cool = C.SHIP_FIRE_RATE
+        vel = dirv * C.JUCI_BULLET_SPEED
+        self.cool = C.JUCI_FIRE_RATE
         return Bullet(pos, vel)
 
     def hyperspace(self):
@@ -209,11 +209,11 @@ class Ship(pg.sprite.Sprite):
             draw_circle(surf, self.pos, raio + 3)
 
 
-zombiemov_gif = os.path.join(BASE_DIR, "sprites", "zombie_anda.gif")
-juci_gif = os.path.join(BASE_DIR, "sprites", "juci.gif")
+ZOMBIEmov_gif = os.path.join(BASE_DIR, "sprites", "ZOMBIE_anda.gif")
+JUCI_gif = os.path.join(BASE_DIR, "sprites", "JUCI.gif")
 
 
-class UFO(pg.sprite.Sprite):
+class ZOMBIE(pg.sprite.Sprite):
     def __init__(self, pos: Vec, target: pg.sprite.Sprite):
         super().__init__()
         self.speed = 60
@@ -224,20 +224,20 @@ class UFO(pg.sprite.Sprite):
         self.r = 16
 
         # Carregar sprites
-        gif = Image.open(zombiemov_gif)
+        gif = Image.open(ZOMBIEmov_gif)
         self.sprites = []
 
         try:
             while True:
                 gif.seek(len(self.sprites))
                 frame = gif.copy().convert("RGBA")
-                zombiewalk_img = pg.image.fromstring(
+                ZOMBIEwalk_img = pg.image.fromstring(
                     frame.tobytes(), frame.size, frame.mode)
 
                 # ESCALA
-                zombiewalk_img = pg.transform.scale(zombiewalk_img, (32, 48))
+                ZOMBIEwalk_img = pg.transform.scale(ZOMBIEwalk_img, (32, 48))
 
-                self.sprites.append(zombiewalk_img)
+                self.sprites.append(ZOMBIEwalk_img)
         except EOFError:
             pass
 
@@ -249,11 +249,11 @@ class UFO(pg.sprite.Sprite):
         self.dir = Vec(1, 0)
 
     def update(self, dt: float):
-        # Aim at target (ship)
+        # Aim at target (JUCI)
         if self.target and hasattr(self.target, "pos"):
-            to_ship = self.target.pos - self.pos
-            if to_ship.length_squared() > 0:
-                desired_dir = to_ship.normalize()
+            to_JUCI = self.target.pos - self.pos
+            if to_JUCI.length_squared() > 0:
+                desired_dir = to_JUCI.normalize()
 
                 # Current angle and desired angle
                 current_angle = math.atan2(self.dir.y, self.dir.x)

@@ -2,7 +2,7 @@
 from random import uniform
 import pygame as pg
 import config as C
-from sprites import Ship, UFO, background
+from sprites import JUCI, ZOMBIE, background
 from utils import Vec
 from sounds import sound_shot, zombie_sound, zombie_death, player_death
 
@@ -10,19 +10,20 @@ from sounds import sound_shot, zombie_sound, zombie_death, player_death
 class World:
 
     def __init__(self):
-        self.ship = Ship(Vec(C.WIDTH / 2, C.HEIGHT / 2))
+        self.JUCI = JUCI(Vec(C.WIDTH / 2, C.HEIGHT / 2))
         self.bullets = pg.sprite.Group()
-        self.ufos = pg.sprite.Group()
-        self.all_sprites = pg.sprite.Group(self.ship)
+        self.ZOMBIEs = pg.sprite.Group()
+        self.all_sprites = pg.sprite.Group(self.JUCI)
 
-        self.ufo_timer = C.UFO_SPAWN_EVERY
+        self.ZOMBIE_timer = C.ZOMBIE_SPAWN_EVERY
         self.spawn_multiplier = 1  # Quantos zumbis nascem por vez
         self.difficulty_timer = 0  # Contador de tempo para aumentar dificul
 
         self.score = 0
         self.lives = C.START_LIVES
+        self.game_over = False
         self.safe = C.SAFE_SPAWN_TIME
-        self.ufo_timer = C.UFO_SPAWN_EVERY
+        self.ZOMBIE_timer = C.ZOMBIE_SPAWN_EVERY
 
         self.buildings = [
             pg.Rect(45, 75, 190, 220),  # Prédio esquerdo
@@ -30,14 +31,14 @@ class World:
         ]
 
     def try_fire(self):
-        bullet = self.ship.fire()
+        bullet = self.JUCI.fire()
         if bullet:
             self.bullets.add(bullet)
             self.all_sprites.add(bullet)
         sound_shot.play()
 
-    # Spawnar zombies
-    def spawn_ufo(self):
+    # Spawnar ZOMBIEs
+    def spawn_ZOMBIE(self):
         zombie_sound.play()
         side = uniform(0, 4)
         if side < 1:
@@ -49,17 +50,17 @@ class World:
         else:
             pos = Vec(uniform(0, C.WIDTH), C.HEIGHT)
 
-        ufo = UFO(pos, self.ship)
-        self.ufos.add(ufo)
-        self.all_sprites.add(ufo)
+        zombie_instance = ZOMBIE(pos, self.JUCI)
+        self.ZOMBIEs.add(zombie_instance)
+        self.all_sprites.add(zombie_instance)
 
     def update(self, dt: float, keys):
-        self.ship.update(dt, keys)
+        self.JUCI.update(dt, keys)
         self.bullets.update(dt)
-        self.ufos.update(dt)
+        self.ZOMBIEs.update(dt)
 
         self.safe -= dt
-        self.ufo_timer -= dt
+        self.ZOMBIE_timer -= dt
 
         # Aumenta dificul
         self.difficulty_timer += dt
@@ -72,66 +73,69 @@ class World:
                 self.spawn_multiplier += 1
 
         # Diminui o tempo entre spawns (mínimo 0.4s)
-            C.UFO_SPAWN_EVERY = max(0.4, C.UFO_SPAWN_EVERY * 0.85)
+            C.ZOMBIE_SPAWN_EVERY = max(0.4, C.ZOMBIE_SPAWN_EVERY * 0.85)
 
     # SPAWN DE ZUMBIS
-        if self.ufo_timer <= 0:
+        if self.ZOMBIE_timer <= 0:
             for _ in range(self.spawn_multiplier):   # spawn múltiplo
-                self.spawn_ufo()
+                self.spawn_ZOMBIE()
 
-            self.ufo_timer = C.UFO_SPAWN_EVERY
+            self.ZOMBIE_timer = C.ZOMBIE_SPAWN_EVERY
 
-        # Colisão Player x Zombie
-        if self.ship.invuln <= 0 and self.safe <= 0:
-            for ufo in self.ufos:
-                if (ufo.pos - self.ship.pos).length() < (ufo.r + self.ship.r):
+        # Colisão Player x ZOMBIE
+        if self.JUCI.invuln <= 0 and self.safe <= 0:
+            for zombie in self.ZOMBIEs:
+                if (
+                    (zombie.pos - self.JUCI.pos).length()
+                    < (zombie.r + self.JUCI.r)
+                ):
                     player_death.play()
-                    self.ship_die()
+                    self.JUCI_die()
                     break
 
         # Colisão dos zumbis com as paredes
-        for ufo in self.ufos:
-            rect = ufo.rect
+        for zombie in self.ZOMBIEs:
+            rect = zombie.rect
             for b in self.buildings:
                 if rect.colliderect(b):
                     # Recuar movimento
-                    ufo.pos -= ufo.dir * ufo.speed * dt
-                    ufo.rect.center = ufo.pos
+                    zombie.pos -= zombie.dir * zombie.speed * dt
+                    zombie.rect.center = zombie.pos
                     # Faz o zumbi andar pro outro lado
-                    ufo.dir.rotate_ip(90)
+                    zombie.dir.rotate_ip(90)
 
-        # Colisão ship com as paredes
-        ship_rect = self.ship.rect
+        # Colisão JUCI com as paredes
+        JUCI_rect = self.JUCI.rect
         for b in self.buildings:
-            if ship_rect.colliderect(b):
+            if JUCI_rect.colliderect(b):
                 # Recuar o movimento do player
-                self.ship.pos -= self.ship.vel * dt
+                self.JUCI.pos -= self.JUCI.vel * dt
                 # Atualizar rect depois de mover a posição
-                self.ship.rect.center = self.ship.pos
+                self.JUCI.rect.center = self.JUCI.pos
                 # Para garantir que ele realmente pare
-                self.ship.vel.xy = (0, 0)
+                self.JUCI.vel.xy = (0, 0)
 
-        for ufo in list(self.ufos):
+        for zombie in list(self.ZOMBIEs):
             for b in list(self.bullets):
-                # Só balas da nave podem acertar o UFO
-                if getattr(b, "owner", "ship") != "ship":
+                # Só balas da nave podem acertar o ZOMBIE
+                if getattr(b, "owner", "JUCI") != "JUCI":
                     continue
-                if (ufo.pos - b.pos).length() < (ufo.r + b.r):
-                    self.score += C.UFO_SMALL["score"]
-                    ufo.kill()
+                if (zombie.pos - b.pos).length() < (zombie.r + b.r):
+                    self.score += C.ZOMBIE_SMALL["score"]
+                    zombie.kill()
                     b.kill()
                     zombie_death.play()
 
-    def ship_die(self):
+    def JUCI_die(self):
         self.lives -= 1
-        self.ship.pos.xy = (C.WIDTH / 2, C.HEIGHT / 2)
-        self.ship.vel.xy = (0, 0)
-        self.ship.angle = -90
-        self.ship.invuln = C.SAFE_SPAWN_TIME
+        self.JUCI.pos.xy = (C.WIDTH / 2, C.HEIGHT / 2)
+        self.JUCI.vel.xy = (0, 0)
+        self.JUCI.angle = -90
+        self.JUCI.invuln = C.SAFE_SPAWN_TIME
         self.safe = C.SAFE_SPAWN_TIME
         if self.lives < 0:
-            # Reset total
-            self.__init__()
+            # Marca fim de jogo; Game cuidará do restante
+            self.game_over = True
 
     def draw(self, surf: pg.Surface, font: pg.font.Font):
         # Desenha o fundo primeiro
