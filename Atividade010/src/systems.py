@@ -133,7 +133,7 @@ class World:
         self.JUCI.angle = -90
         self.JUCI.invuln = C.SAFE_SPAWN_TIME
         self.safe = C.SAFE_SPAWN_TIME
-        if self.lives < 0:
+        if self.lives < 1:
             # Marca fim de jogo; Game cuidará do restante
             self.game_over = True
 
